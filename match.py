@@ -437,7 +437,13 @@ def main() -> None:
     # Combined options from config
     free_opts = resolved_cfg.get("free_options") or {}
     company_opts = resolved_cfg.get("company_options") or {}
-    run_both = args.run_both or bool(resolved_cfg.get("run_both"))
+    # Default behavior: run both if neither CLI nor config specifies otherwise
+    if _arg_present("--run-both"):
+        run_both = args.run_both
+    elif "run_both" in resolved_cfg:
+        run_both = bool(resolved_cfg.get("run_both"))
+    else:
+        run_both = True
 
     # Output handling (configurable dir/prefix)
     out_cfg = resolved_cfg.get("output", {}) if resolved_cfg else {}
