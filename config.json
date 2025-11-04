@@ -2,10 +2,22 @@
   "resume": "input/resume.txt",
   "top": 15,
   "fetch": {
+    "mode": "company",
+    "company_source": "lever",
+    "companies": ["openai", "jpmorgan", "meta", "mrstanley", "oracle", "uber"],
+    "query": "python|mlops|data"
+  },
+  "free_options": {
     "mode": "free",
     "source": "remoteok",
-    "query": "Python MLOps Engineer",
+    "query": "python|mlops|data",
     "location": null
+  },
+  "company_options": {
+    "mode": "company",
+    "company_source": "greenhouse",
+    "companies": ["openai", "databricks", "stripe"],
+    "query": "python|mlops|data"
   },
   "output": {
     "dir": "output",
