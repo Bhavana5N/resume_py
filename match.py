@@ -3,6 +3,7 @@ import json
 import os
 import re
 import sys
+import csv
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -42,7 +43,7 @@ def load_jobs(local: str | None, url: str | None, here: Path) -> list[dict[str, 
         return json.load(f)
 
 
-def fetch_serpapi_google_jobs(query: str, location: str | None, api_key: str, limit: int) -> list[dict[str, Any]]:
+def fetch_serpapi_google_jobs(query: str, location: str | None, api_key: str, fetch_limit: int) -> list[dict[str, Any]]:
     params = {
         "engine": "google_jobs",
         "q": query,
@@ -57,7 +58,7 @@ def fetch_serpapi_google_jobs(query: str, location: str | None, api_key: str, li
     items = data.get("jobs_results", []) or []
 
     results: list[dict[str, Any]] = []
-    for it in items[:limit]:
+    for it in items[:fetch_limit]:
         title = it.get("title") or ""
         company = it.get("company_name") or it.get("company") or ""
         loc = it.get("location") or ""
@@ -88,14 +89,28 @@ def fetch_serpapi_google_jobs(query: str, location: str | None, api_key: str, li
 # ---------- Free sources (no API key required) ----------
 
 def _query_match(text: str, query: str) -> bool:
+    """Return True if text matches query.
+    - Supports OR terms with '|' (any token match).
+    - Otherwise requires at least 50% of query tokens to be present (lenient).
+    """
     if not query:
         return True
+    hay = tokenize_for_fuzz(text).split()
+    hay_set = set(hay)
+
+    # OR support with '|'
+    if '|' in query:
+        ors = [t.strip() for t in query.split('|') if t.strip()]
+        return any(tokenize_for_fuzz(term) in ' '.join(hay) or any(tok in hay_set for tok in tokenize_for_fuzz(term).split()) for term in ors)
+
     q_tokens = [t for t in tokenize_for_fuzz(query).split() if t]
-    hay = tokenize_for_fuzz(text)
-    return all(t in hay for t in q_tokens)
+    if not q_tokens:
+        return True
+    matched = sum(1 for t in q_tokens if t in hay_set)
+    return matched >= max(1, int(len(q_tokens) * 0.5))
 
 
-def fetch_remotive(query: str | None, limit: int) -> list[dict[str, Any]]:
+def fetch_remotive(query: str | None, fetch_limit: int) -> list[dict[str, Any]]:
     # Docs: https://remotive.com/api/remote-jobs
     params: dict[str, Any] = {}
     if query:
@@ -119,18 +134,19 @@ def fetch_remotive(query: str | None, limit: int) -> list[dict[str, Any]]:
             "url": url,
             "source": "remotive"
         })
-        if len(results) >= limit:
+        if len(results) >= fetch_limit:
             break
     return results
 
 
-def fetch_remoteok(query: str | None, limit: int) -> list[dict[str, Any]]:
+def fetch_remoteok(query: str | None, fetch_limit: int) -> list[dict[str, Any]]:
     # Docs: https://remoteok.com/api
     headers = {"User-Agent": "Mozilla/5.0 (compatible; JobMatcher/1.0)"}
     resp = requests.get("https://remoteok.com/api", headers=headers, timeout=30)
     resp.raise_for_status()
     data = resp.json()
-    results: list[dict[str, Any]] = []
+    filtered: list[dict[str, Any]] = []
+    unfiltered: list[dict[str, Any]] = []
     for it in data:
         # First element can be legal notice (dict with 'legal')
         if isinstance(it, dict) and it.get("position"):
@@ -140,27 +156,30 @@ def fetch_remoteok(query: str | None, limit: int) -> list[dict[str, Any]]:
             desc = it.get("description") or ""
             url = it.get("url") or it.get("apply_url") or ""
             combined = f"{title}\n{company}\n{loc}\n{desc}"
+            unfiltered.append({
+                "title": title,
+                "company": company,
+                "location": loc,
+                "description": desc,
+                "url": url,
+                "source": "remoteok"
+            })
             if _query_match(combined, query or ""):
-                results.append({
-                    "title": title,
-                    "company": company,
-                    "location": loc,
-                    "description": desc,
-                    "url": url,
-                    "source": "remoteok"
-                })
-                if len(results) >= limit:
-                    break
-    return results
+                filtered.append(unfiltered[-1])
+    # Respect fetch_limit
+    if filtered:
+        return filtered[:fetch_limit]
+    return unfiltered[:fetch_limit]
 
 
-def fetch_arbeitnow(query: str | None, limit: int) -> list[dict[str, Any]]:
+def fetch_arbeitnow(query: str | None, fetch_limit: int) -> list[dict[str, Any]]:
     # Docs: https://www.arbeitnow.com/api/job-board-api
     resp = requests.get("https://www.arbeitnow.com/api/job-board-api", timeout=30)
     resp.raise_for_status()
     data = resp.json()
     items = data.get("data", []) or []
-    results: list[dict[str, Any]] = []
+    filtered: list[dict[str, Any]] = []
+    unfiltered: list[dict[str, Any]] = []
     for it in items:
         title = it.get("title") or it.get("position") or ""
         company = it.get("company") or ""
@@ -168,18 +187,20 @@ def fetch_arbeitnow(query: str | None, limit: int) -> list[dict[str, Any]]:
         desc = it.get("description") or ""
         url = it.get("url") or ""
         combined = f"{title}\n{company}\n{loc}\n{desc}"
+        entry = {
+            "title": title,
+            "company": company,
+            "location": loc,
+            "description": desc,
+            "url": url,
+            "source": "arbeitnow"
+        }
+        unfiltered.append(entry)
         if _query_match(combined, query or ""):
-            results.append({
-                "title": title,
-                "company": company,
-                "location": loc,
-                "description": desc,
-                "url": url,
-                "source": "arbeitnow"
-            })
-            if len(results) >= limit:
-                break
-    return results
+            filtered.append(entry)
+    if filtered:
+        return filtered[:fetch_limit]
+    return unfiltered[:fetch_limit]
 
 
 FREE_SOURCES = {
@@ -234,6 +255,23 @@ def _arg_present(flag: str) -> bool:
     return any(a == flag or a.startswith(flag + "=") for a in sys.argv)
 
 
+def write_csv(rows: list[dict[str, Any]], csv_path: Path) -> None:
+    fields = ["title", "company", "location", "score", "url", "source", "description"]
+    with open(csv_path, "w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=fields)
+        w.writeheader()
+        for r in rows:
+            w.writerow({
+                "title": r.get("title", ""),
+                "company": r.get("company", ""),
+                "location": r.get("location", ""),
+                "score": r.get("score", ""),
+                "url": r.get("url", ""),
+                "source": r.get("source", ""),
+                "description": (r.get("description", "") or "").replace("\r", " ").replace("\n", " ")
+            })
+
+
 def main() -> None:
     here = Path(__file__).parent
     parser = argparse.ArgumentParser(description="Score and list top matching jobs for a given resume.")
@@ -241,16 +279,19 @@ def main() -> None:
     parser.add_argument("--jobs", default=None, help="Path to jobs JSON (array)")
     parser.add_argument("--jobs-url", dest="jobs_url", default=None, help="HTTP URL returning JSON jobs array")
     parser.add_argument("--top", type=int, default=10, help="Top N results")
+    parser.add_argument("--fetch-limit", type=int, default=200, help="Max number of jobs to fetch before scoring")
     # Config support
     parser.add_argument("--config", default=None, help="Path to config JSON (overrides defaults)")
     # Free sources (no API key)
     parser.add_argument("--free-source", choices=list(FREE_SOURCES.keys()), default=None, help="Use a free jobs source (no API key)")
     # SerpAPI options (Google Jobs)
     parser.add_argument("--serpapi-key", default=os.getenv("SERPAPI_KEY"), help="SerpAPI key (optional)")
-    parser.add_argument("--query", default=None, help="Search query, e.g., 'Python MLOps Engineer'")
+    parser.add_argument("--query", default=None, help="Search query, e.g., 'Python MLOps Engineer' or 'python|mlops|data'")
     parser.add_argument("--location", default=None, help="Search location (used by some sources)")
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
     parser.add_argument("--out", default=str(here / "output" / f"matched_jobs_{ts}.json"), help="Output JSON path")
+    parser.add_argument("--csv-out", default=None, help="Optional CSV output path; defaults to same as --out with .csv suffix")
+    parser.add_argument("--save-fetched", action="store_true", help="Also save all fetched jobs to JSON and CSV")
     args = parser.parse_args()
 
     # Load and merge config if provided (or if default exists)
@@ -300,7 +341,7 @@ def main() -> None:
     # Output handling (configurable dir/prefix)
     out_cfg = resolved_cfg.get("output", {}) if resolved_cfg else {}
     out_path = args.out
-    if out_cfg:
+    if out_cfg and not _arg_present("--out"):
         out_dir = out_cfg.get("dir")
         prefix = out_cfg.get("prefix", "matched_jobs")
         if out_dir:
@@ -309,20 +350,26 @@ def main() -> None:
 
     resume_text = read_text(resume_file)
 
-    jobs: list[dict[str, Any]]
-    # Priority: explicit free source -> SerpAPI (if key+query) -> JSON/url/local sample
-    if free_source and query:
+    # Fetch jobs according to chosen source
+    fetched: list[dict[str, Any]]
+    if free_source and query is not None:
         fetcher = FREE_SOURCES.get(free_source)
         if not fetcher:
             raise SystemExit(f"Unknown free source: {free_source}")
-        jobs = fetcher(query, top_n)
+        fetched = fetcher(query, args.fetch_limit)
     elif serpapi_key and query:
-        jobs = fetch_serpapi_google_jobs(query, location, serpapi_key, top_n)
+        fetched = fetch_serpapi_google_jobs(query, location, serpapi_key, args.fetch_limit)
     else:
-        jobs = load_jobs(jobs_arg, jobs_url_arg, here)
+        fetched = load_jobs(jobs_arg, jobs_url_arg, here)
+        if isinstance(fetched, dict) and 'items' in fetched:
+            fetched = fetched['items']  # normalize
+        if not isinstance(fetched, list):
+            fetched = []
+        fetched = fetched[: args.fetch_limit]
 
+    # Score and select
     scored = []
-    for job in jobs:
+    for job in fetched:
         s = score_job(job, resume_text)
         scored.append({**job, "score": round(s, 2)})
     scored.sort(key=lambda x: x["score"], reverse=True)
@@ -333,6 +380,29 @@ def main() -> None:
     with open(out_file, "w", encoding="utf-8") as f:
         json.dump(top, f, indent=2)
 
+    # CSV path for top N
+    csv_path = Path(args.csv_out) if args.csv_out else out_file.with_suffix('.csv')
+    write_csv(top, csv_path)
+
+    # Save fetched list (JSON/CSV) if requested
+    stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    fetched_json = out_file.parent / f"fetched_jobs_{stamp}.json"
+    fetched_csv = out_file.parent / f"fetched_jobs_{stamp}.csv"
+    if args.save_fetched:
+        with open(fetched_json, "w", encoding="utf-8") as f:
+            json.dump(fetched, f, indent=2)
+        # add dummy score column for CSV uniformity
+        fetched_rows = [{**j, "score": ""} for j in fetched]
+        write_csv(fetched_rows, fetched_csv)
+
+    # Always also produce top-50 alongside configured top
+    top50 = scored[:50]
+    top50_json = out_file.parent / f"top50_jobs_{stamp}.json"
+    top50_csv = out_file.parent / f"top50_jobs_{stamp}.csv"
+    with open(top50_json, "w", encoding="utf-8") as f:
+        json.dump(top50, f, indent=2)
+    write_csv(top50, top50_csv)
+
     print("Top matches:")
     for j in top:
         line = f"- [{j['score']}] {j.get('title','')} @ {j.get('company','')} ({j.get('location','')})"
@@ -340,6 +410,12 @@ def main() -> None:
             line += f" - {j['url']}"
         print(line)
     print("Saved to:", os.path.abspath(out_file))
+    print("CSV saved to:", os.path.abspath(csv_path))
+    if args.save_fetched:
+        print("Fetched JSON:", os.path.abspath(fetched_json))
+        print("Fetched CSV:", os.path.abspath(fetched_csv))
+    print("Top50 JSON:", os.path.abspath(top50_json))
+    print("Top50 CSV:", os.path.abspath(top50_csv))
 
 
 if __name__ == "__main__":
