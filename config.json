@@ -1,0 +1,14 @@
+{
+  "resume": "../resume/input/resume.txt",
+  "top": 15,
+  "fetch": {
+    "mode": "free",
+    "source": "remoteok",
+    "query": "Python MLOps Engineer",
+    "location": null
+  },
+  "output": {
+    "dir": "output",
+    "prefix": "matches_daily"
+  }
+}
