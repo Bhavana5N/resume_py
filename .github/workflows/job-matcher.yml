@@ -1,6 +1,9 @@
-name: Resume Job Matcher (Reusable)
+name: Resume Job Matcher
 
 on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
   workflow_call:
     inputs:
       config_path:
@@ -39,7 +42,7 @@ jobs:
         env:
           SERPAPI_KEY: ${{ secrets.SERPAPI_KEY }}
         run: |
-          python match.py --config "${{ inputs.config_path }}"
+          python match.py --config "${{ inputs.config_path || 'config.json' }}"
 
       - name: List outputs
         run: |
