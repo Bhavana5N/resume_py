@@ -352,6 +352,7 @@ def resolve_from_config(cfg: dict[str, Any]) -> dict[str, Any]:
     free_options = cfg.get("free_options", {})
     company_options = cfg.get("company_options", {})
     run_both = bool(cfg.get("run_both", False))
+    selenium_only = bool(cfg.get("selenium_only", False))
 
     return {
         "resume": cfg.get("resume"),
@@ -369,6 +370,7 @@ def resolve_from_config(cfg: dict[str, Any]) -> dict[str, Any]:
         "free_options": free_options,
         "company_options": company_options,
         "run_both": run_both,
+        "selenium_only": selenium_only,
     }
 
 
