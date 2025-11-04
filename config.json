@@ -2,11 +2,11 @@
   "resume": "input/resume.txt",
   "top": 15,
   "country": "usa",
-  "run_both": true,
+  "run_both": false,
   "fetch": {
     "mode": "company",
     "company_source": "lever",
-    "companies": ["openai", "jpmorgan", "meta", "mrstanley", "oracle", "uber"],
+      "companies": ["openai", "jpmorgan", "meta", "mrstanley", "oracle", "adp", "google", "microsoft", "salesforce", "tiktok", "twitter", "uber", "yahoo", "youtube",  "apple", "meta", "netflix", "nvidia", "uber", "yahoo", "youtube", "zoom", "amazon", "jpmorgan"],
     "query": "python|mlops|data"
   },
   "free_options": {
@@ -18,7 +18,7 @@
   "company_options": {
     "mode": "company",
     "company_source": "lever",
-    "companies": ["openai", "jpmorgan", "meta", "mrstanley", "oracle", "uber"],
+    "companies": ["openai", "jpmorgan", "meta", "mrstanley", "oracle", "adp", "google", "microsoft", "salesforce", "tiktok", "twitter", "uber", "yahoo", "youtube",  "apple", "meta", "netflix", "nvidia", "uber", "yahoo", "youtube", "zoom", "amazon", "jpmorgan"],
     "query": "python|mlops|data"
   },
   "selenium_options": {
