@@ -2,6 +2,7 @@ import argparse
 import json
 import os
 import re
+import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -229,6 +230,10 @@ def resolve_from_config(cfg: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _arg_present(flag: str) -> bool:
+    return any(a == flag or a.startswith(flag + "=") for a in sys.argv)
+
+
 def main() -> None:
     here = Path(__file__).parent
     parser = argparse.ArgumentParser(description="Score and list top matching jobs for a given resume.")
@@ -258,12 +263,34 @@ def main() -> None:
             cfg_data = None
     resolved_cfg: dict[str, Any] = resolve_from_config(cfg_data) if cfg_data else {}
 
-    # Merge precedence: CLI > config > defaults
-    resume_path = args.resume or resolved_cfg.get("resume") or str(here.parent / "resume" / "input" / "resume.txt")
+    # Merge precedence with safe fallback:
+    # 1) if --resume explicitly passed, use it
+    # 2) else if config has resume, use it
+    # 3) else try common defaults in order
+    resume_path_candidate = args.resume if _arg_present("--resume") else (resolved_cfg.get("resume") or None)
+    candidates = [
+        resume_path_candidate,
+        str(here / "resume.txt"),
+        str(here / "input" / "resume.txt"),
+        str(here.parent / "resume" / "input" / "resume.txt"),
+    ]
+    candidates = [c for c in candidates if c]
+    resume_file: Path | None = None
+    for c in candidates:
+        p = Path(c)
+        if p.exists():
+            resume_file = p
+            break
+    if not resume_file:
+        raise SystemExit(
+            "Resume file not found. Set `resume` in config.json or pass --resume <path>. "
+            "Tried: " + ", ".join(candidates)
+        )
+
     top_n = args.top if args.top else int(resolved_cfg.get("top", 10))
 
     # Source selection
-    free_source = args.free_source or resolved_cfg.get("source") if resolved_cfg.get("mode") == "free" else args.free_source
+    free_source = args.free_source or (resolved_cfg.get("source") if resolved_cfg.get("mode") == "free" else None)
     query = args.query or resolved_cfg.get("query")
     location = args.location or resolved_cfg.get("location")
     serpapi_key = args.serpapi_key or resolved_cfg.get("serpapi_key")
@@ -280,7 +307,7 @@ def main() -> None:
             stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             out_path = str(Path(here / out_dir / f"{prefix}_{stamp}.json"))
 
-    resume_text = read_text(Path(resume_path))
+    resume_text = read_text(resume_file)
 
     jobs: list[dict[str, Any]]
     # Priority: explicit free source -> SerpAPI (if key+query) -> JSON/url/local sample
