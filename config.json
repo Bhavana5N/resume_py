@@ -9,12 +9,6 @@
       "companies": ["openai", "jpmorgan", "meta", "mrstanley", "oracle", "adp", "google", "microsoft", "salesforce", "tiktok", "twitter", "uber", "yahoo", "youtube",  "apple", "meta", "netflix", "nvidia", "uber", "yahoo", "youtube", "zoom", "amazon", "jpmorgan"],
     "query": "python|mlops|data"
   },
-  "free_options": {
-    "mode": "free",
-    "source": "remoteok",
-    "query": "python|mlops|data",
-    "location": null
-  },
   "company_options": {
     "mode": "company",
     "company_source": "lever",
