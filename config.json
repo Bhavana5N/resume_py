@@ -1,7 +1,6 @@
 {
   "resume": "input/resume.txt",
   "top": 15,
-  "country": "usa",
   "run_both": false,
   "fetch": {
     "mode": "company",
