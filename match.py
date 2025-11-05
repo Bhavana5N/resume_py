@@ -236,87 +236,10 @@ def fetch_arbeitnow(query: str | None, fetch_limit: int) -> list[dict[str, Any]]
     return unfiltered[:fetch_limit]
 
 
-# ---------- Company career sources (no auth) ----------
-def fetch_lever(companies: list[str], fetch_limit: int) -> list[dict[str, Any]]:
-    results: list[dict[str, Any]] = []
-    for slug in companies:
-        try:
-            url = f"https://api.lever.co/v0/postings/{slug}?mode=json"
-            resp = requests.get(url, timeout=30)
-            resp.raise_for_status()
-            posts = resp.json()
-            for p in posts:
-                title = p.get("text") or p.get("title") or ""
-                company = p.get("company") or slug
-                loc = (p.get("categories") or {}).get("location") or ""
-                desc = p.get("descriptionPlain") or ""
-                job_url = p.get("hostedUrl") or p.get("applyUrl") or (p.get("urls", {}) or {}).get("list") or ""
-                results.append({
-                    "title": title,
-                    "company": company,
-                    "location": loc,
-                    "description": desc,
-                    "url": job_url,
-                    "careers_url": f"https://jobs.lever.co/{slug}",
-                    "source": f"lever:{slug}"
-                })
-                if len(results) >= fetch_limit:
-                    return results
-        except Exception:
-            continue
-    return results
-
-
-def fetch_greenhouse(companies: list[str], fetch_limit: int) -> list[dict[str, Any]]:
-    results: list[dict[str, Any]] = []
-    for slug in companies:
-        try:
-            url = f"https://boards-api.greenhouse.io/v1/boards/{slug}/jobs"
-            resp = requests.get(url, timeout=30)
-            resp.raise_for_status()
-            data = resp.json()
-            jobs = data.get("jobs", [])
-            for j in jobs:
-                title = j.get("title") or ""
-                company = slug
-                loc = (j.get("location") or {}).get("name") or ""
-                job_url = j.get("absolute_url") or ""
-                desc = ""
-                try:
-                    job_id = j.get("id")
-                    if job_id:
-                        detail_url = f"https://boards-api.greenhouse.io/v1/boards/{slug}/jobs/{job_id}?content=true"
-                        dr = requests.get(detail_url, timeout=30)
-                        if dr.ok:
-                            dj = dr.json()
-                            desc = dj.get("content") or ""
-                except Exception:
-                    pass
-                results.append({
-                    "title": title,
-                    "company": company,
-                    "location": loc,
-                    "description": desc,
-                    "url": job_url,
-                    "careers_url": f"https://boards.greenhouse.io/{slug}",
-                    "source": f"greenhouse:{slug}"
-                })
-                if len(results) >= fetch_limit:
-                    return results
-        except Exception:
-            continue
-    return results
-
-
 FREE_SOURCES = {
     "remotive": fetch_remotive,
     "remoteok": fetch_remoteok,
     "arbeitnow": fetch_arbeitnow,
-}
-
-COMPANY_SOURCES = {
-    "lever": fetch_lever,
-    "greenhouse": fetch_greenhouse,
 }
 
 
@@ -585,7 +508,6 @@ def main() -> None:
     parser.add_argument("--csv-out", default=None, help="Optional CSV output path; defaults to same as --out with .csv suffix")
     parser.add_argument("--save-fetched", action="store_true", help="Also save all fetched jobs to JSON and CSV")
     parser.add_argument("--run-both", action="store_true", help="Fetch from both free_options and company_options and combine")
-    parser.add_argument("--with-selenium", action="store_true", help="Also fetch from selenium_options.sites if provided")
     args = parser.parse_args()
 
     # Load and merge config if provided (or if default exists)
@@ -678,15 +600,6 @@ def main() -> None:
         return out
 
     if run_both:
-        # Company block
-        comp_src = company_source or company_opts.get("company_source")
-        comp_companies = cfg_companies or company_opts.get("companies") or []
-        comp_query = query or company_opts.get("query")
-        if comp_src and comp_companies:
-            comp_fetcher = COMPANY_SOURCES.get(comp_src)
-            if not comp_fetcher:
-                raise SystemExit(f"Unknown company source: {comp_src}")
-            fetched += comp_fetcher(comp_companies, args.fetch_limit)
         # Free block
         free_src = free_source or free_opts.get("source")
         free_query = query or free_opts.get("query")
@@ -697,12 +610,7 @@ def main() -> None:
             fetched += free_fetcher(free_query, args.fetch_limit)
         fetched = _dedupe_by_url(fetched)
     else:
-        if company_source and cfg_companies:
-            fetcher = COMPANY_SOURCES.get(company_source)
-            if not fetcher:
-                raise SystemExit(f"Unknown company source: {company_source}")
-            fetched = fetcher(cfg_companies, args.fetch_limit)
-        elif free_source and query is not None:
+        if free_source and query is not None:
             fetcher = FREE_SOURCES.get(free_source)
             if not fetcher:
                 raise SystemExit(f"Unknown free source: {free_source}")
@@ -718,7 +626,7 @@ def main() -> None:
             fetched = fetched[: args.fetch_limit]
 
     # Optional Selenium fetch
-    use_selenium = args.with_selenium or bool(selenium_opts.get("enabled"))
+    use_selenium = bool(selenium_opts.get("enabled"))
     if use_selenium:
         # Prefer explicit sites; otherwise derive from company_options
         sites = selenium_opts.get("sites") or build_selenium_sites_from_company_opts(company_opts)
