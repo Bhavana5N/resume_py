@@ -16,6 +16,7 @@ from rapidfuzz import fuzz
 try:
     from selenium import webdriver
     from selenium.webdriver.chrome.options import Options as ChromeOptions
+    from selenium.webdriver.chrome.service import Service as ChromeService
     from selenium.webdriver.common.by import By
     from selenium.webdriver.support.ui import WebDriverWait
     from selenium.webdriver.support import expected_conditions as EC
@@ -277,6 +278,7 @@ def resolve_from_config(cfg: dict[str, Any]) -> dict[str, Any]:
     company_options = cfg.get("company_options", {})
     run_both = bool(cfg.get("run_both", False))
     selenium_only = bool(cfg.get("selenium_only", False))
+    selenium_options = cfg.get("selenium_options", {})
 
     return {
         "resume": cfg.get("resume"),
@@ -295,6 +297,7 @@ def resolve_from_config(cfg: dict[str, Any]) -> dict[str, Any]:
         "company_options": company_options,
         "run_both": run_both,
         "selenium_only": selenium_only,
+        "selenium_options": selenium_options
     }
 
 
@@ -330,18 +333,44 @@ def create_headless_driver() -> Any:
     chrome_options.add_argument("--disable-gpu")
     chrome_options.add_argument("--window-size=1920,1080")
     chrome_options.add_argument("--user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36")
-    driver = webdriver.Chrome(ChromeDriverManager().install(), options=chrome_options)
+    service = ChromeService(ChromeDriverManager().install())
+    driver = webdriver.Chrome(service=service, options=chrome_options)
     driver.implicitly_wait(5)
     return driver
 
 
-def fetch_selenium_sites(sites: list[dict[str, Any]], fetch_limit: int) -> list[dict[str, Any]]:
+def fetch_selenium_sites(sites: list[Any], fetch_limit: int) -> list[dict[str, Any]]:
     if not SELENIUM_AVAILABLE:
         return []
     driver = create_headless_driver()
     if driver is None:
         return []
     results: list[dict[str, Any]] = []
+    # Normalize sites to dict entries even if provided as plain URLs
+    normalized: list[dict[str, Any]] = []
+    for site in sites or []:
+        if isinstance(site, str):
+            try:
+                p = urlparse(site)
+                absolute_base = f"{p.scheme}://{p.netloc}" if p.scheme and p.netloc else site
+                normalized.append({
+                    "url": site,
+                    "list_selector": "a[href*='job'], a[href*='/jobs/'], a[href*='/careers/']",
+                    "title_selector": "",
+                    "location_selector": "",
+                    "link_selector": "a",
+                    "company": "",
+                    "source": f"selenium:{p.netloc or 'site'}",
+                    "careers_url": site,
+                    "domain_filter": "",
+                    "require_path_contains": "",
+                    "absolute_base": absolute_base
+                })
+            except Exception:
+                continue
+        elif isinstance(site, dict):
+            normalized.append(site)
+    sites = normalized
     try:
         for site in sites or []:
             url = site.get("url")
@@ -594,7 +623,7 @@ def main() -> None:
         cfg_companies = resolved_cfg.get("companies") or []
     else:
         cfg_companies = [c.strip() for c in companies_arg.split(",") if c.strip()]
-
+    print(resolved_cfg)
     # Combined options from config
     free_opts = resolved_cfg.get("free_options") or {}
     company_opts = resolved_cfg.get("company_options") or {}
@@ -661,15 +690,18 @@ def main() -> None:
 
     # Optional Selenium fetch
     use_selenium = bool(selenium_opts.get("enabled"))
+    print(use_selenium)
     if use_selenium:
         # Prefer explicit sites; otherwise derive from company_options
-        sites = selenium_opts.get("sites") or build_selenium_sites_from_company_opts(company_opts)
+        raw_sites = selenium_opts.get("sites") or build_selenium_sites_from_company_opts(company_opts)
         try:
-            print("[selenium] using sites:", [s.get("url") for s in (sites or [])])
+            def _u(x):
+                return x.get("url") if isinstance(x, dict) else str(x)
+            print("[selenium] using sites:", [_u(s) for s in (raw_sites or [])])
         except Exception:
             pass
-        if sites:
-            fetched += fetch_selenium_sites(sites, args.fetch_limit)
+        if raw_sites:
+            fetched += fetch_selenium_sites(raw_sites, args.fetch_limit)
 
     # Country filter (lenient, allows 'Remote')
     if country:
