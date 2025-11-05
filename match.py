@@ -71,9 +71,8 @@ def load_jobs(local: str | None, url: str | None, here: Path) -> list[dict[str, 
         resp = requests.get(url, timeout=20)
         resp.raise_for_status()
         return resp.json()
-    # default to sample from JS tool to avoid duplication
-    with open(here.parent / "resume" / "jobs_sample.json", "r", encoding="utf-8") as f:
-        return json.load(f)
+    # No fallback to sample file; return empty list so other sources (e.g., Selenium) can run
+    return []
 
 
 def fetch_serpapi_google_jobs(query: str, location: str | None, api_key: str, fetch_limit: int) -> list[dict[str, Any]]:
@@ -428,58 +427,53 @@ def build_selenium_sites_from_company_opts(company_opts: dict[str, Any]) -> list
     sites: list[dict[str, Any]] = []
     if not company_opts:
         return sites
-    comp_src = (company_opts.get("company_source") or "").strip().lower()
     companies = company_opts.get("companies") or []
+
+    def discover_careers_url(company_slug: str) -> str | None:
+        slug = company_slug.lower().strip()
+        if not slug:
+            return None
+        candidates = [
+            f"https://www.{slug}.com/careers",
+            f"https://{slug}.com/careers",
+            f"https://www.{slug}.com/jobs",
+            f"https://{slug}.com/jobs",
+            f"https://careers.{slug}.com/",
+            f"https://jobs.{slug}.com/",
+        ]
+        headers = {"User-Agent": "Mozilla/5.0 (compatible; JobMatcher/1.0)"}
+        for c in candidates:
+            try:
+                r = requests.get(c, headers=headers, timeout=10, allow_redirects=True)
+                if r.status_code == 200 and ("career" in r.text.lower() or "job" in r.text.lower()):
+                    return r.url
+            except Exception:
+                continue
+        return None
+
     for slug in companies:
         s = (slug or "").strip()
         if not s:
             continue
-        if comp_src == "lever":
-            base = f"https://jobs.lever.co/{s}"
-            sites.append({
-                "url": base,
-                "list_selector": "a[href*='jobs.lever.co']",
-                "title_selector": "",
-                "location_selector": "",
-                "link_selector": "",
-                "company": s,
-                "source": f"selenium:lever:{s}",
-                "careers_url": base,
-                "domain_filter": "lever.co",
-                "require_path_contains": s,
-                "absolute_base": "https://jobs.lever.co"
-            })
-        elif comp_src == "greenhouse":
-            base = f"https://boards.greenhouse.io/{s}"
-            sites.append({
-                "url": base,
-                "list_selector": "a[href*='/jobs/']",
-                "title_selector": "",
-                "location_selector": "",
-                "link_selector": "",
-                "company": s,
-                "source": f"selenium:greenhouse:{s}",
-                "careers_url": base,
-                "domain_filter": "greenhouse.io",
-                "require_path_contains": "/jobs/",
-                "absolute_base": "https://boards.greenhouse.io"
-            })
-        else:
-            # Unknown vendor; attempt a generic careers URL
+        base = discover_careers_url(s)
+        if not base:
+            # last-resort guess
             base = f"https://{s}.com/careers"
-            sites.append({
-                "url": base,
-                "list_selector": "a",
-                "title_selector": "",
-                "location_selector": "",
-                "link_selector": "",
-                "company": s,
-                "source": f"selenium:generic:{s}",
-                "careers_url": base,
-                "domain_filter": f"{s}.com",
-                "require_path_contains": "",
-                "absolute_base": base
-            })
+        parsed = urlparse(base)
+        domain = parsed.netloc
+        sites.append({
+            "url": base,
+            "list_selector": "a[href*='job'], a[href*='/jobs/'], a[href*='/careers/']",
+            "title_selector": "",
+            "location_selector": "",
+            "link_selector": "a",
+            "company": s,
+            "source": f"selenium:{domain}",
+            "careers_url": base,
+            "domain_filter": domain,
+            "require_path_contains": "",
+            "absolute_base": f"{parsed.scheme}://{parsed.netloc}"
+        })
     return sites
 
 
