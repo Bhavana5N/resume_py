@@ -17,6 +17,8 @@ try:
     from selenium import webdriver
     from selenium.webdriver.chrome.options import Options as ChromeOptions
     from selenium.webdriver.common.by import By
+    from selenium.webdriver.support.ui import WebDriverWait
+    from selenium.webdriver.support import expected_conditions as EC
     from webdriver_manager.chrome import ChromeDriverManager
     SELENIUM_AVAILABLE = True
 except Exception:
@@ -325,7 +327,11 @@ def create_headless_driver() -> Any:
     chrome_options.add_argument("--headless=new")
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
+    chrome_options.add_argument("--disable-gpu")
+    chrome_options.add_argument("--window-size=1920,1080")
+    chrome_options.add_argument("--user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36")
     driver = webdriver.Chrome(ChromeDriverManager().install(), options=chrome_options)
+    driver.implicitly_wait(5)
     return driver
 
 
@@ -352,7 +358,30 @@ def fetch_selenium_sites(sites: list[dict[str, Any]], fetch_limit: int) -> list[
             require_path_contains = site.get("require_path_contains") or ""
             absolute_base = site.get("absolute_base") or url
 
+            try:
+                print(f"[selenium] loading: {url} source={source} company={site.get('company')}")
+            except Exception:
+                pass
             driver.get(url)
+
+            # Optional explicit wait for dynamic pages
+            wait_sel = site.get("wait_selector")
+            try:
+                if wait_sel:
+                    WebDriverWait(driver, 12).until(
+                        EC.presence_of_element_located((By.CSS_SELECTOR, wait_sel))
+                    )
+            except Exception:
+                pass
+
+            # Optional sleep for heavy JS pages
+            try:
+                sleep_seconds = float(site.get("sleep_seconds") or 0)
+                if sleep_seconds > 0:
+                    import time
+                    time.sleep(sleep_seconds)
+            except Exception:
+                pass
             items = []
             if list_sel:
                 items = driver.find_elements(By.CSS_SELECTOR, list_sel)
@@ -362,7 +391,13 @@ def fetch_selenium_sites(sites: list[dict[str, Any]], fetch_limit: int) -> list[
             if not items:
                 items = [driver]
 
-            for elem in items:
+            # Debug: counts per site
+            try:
+                print(f"[selenium] {source} containers={len(items)} url={url}")
+            except Exception:
+                pass
+
+            for idx, elem in enumerate(items):
                 try:
                     title = ""
                     location = ""
@@ -459,6 +494,10 @@ def build_selenium_sites_from_company_opts(company_opts: dict[str, Any]) -> list
         if not base:
             # last-resort guess
             base = f"https://{s}.com/careers"
+        try:
+            print(f"[selenium] discovered careers url for {s}: {base}")
+        except Exception:
+            pass
         parsed = urlparse(base)
         domain = parsed.netloc
         sites.append({
@@ -624,6 +663,10 @@ def main() -> None:
     if use_selenium:
         # Prefer explicit sites; otherwise derive from company_options
         sites = selenium_opts.get("sites") or build_selenium_sites_from_company_opts(company_opts)
+        try:
+            print("[selenium] using sites:", [s.get("url") for s in (sites or [])])
+        except Exception:
+            pass
         if sites:
             fetched += fetch_selenium_sites(sites, args.fetch_limit)
 
