@@ -499,6 +499,7 @@ def build_selenium_sites_from_company_opts(company_opts: dict[str, Any]) -> list
         except Exception:
             pass
         parsed = urlparse(base)
+        print(base)
         domain = parsed.netloc
         sites.append({
             "url": base,
