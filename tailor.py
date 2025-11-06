@@ -8,6 +8,11 @@ try:
 except Exception:
     load_dotenv = None
 
+try:
+    import openai_compat  # noqa: F401
+except Exception:
+    openai_compat = None
+
 if load_dotenv:
     load_dotenv()
 

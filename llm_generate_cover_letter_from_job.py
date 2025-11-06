@@ -4,6 +4,12 @@ This creates the cover letter (in html, utils will then convert in PDF) matching
 # app/libs/resume_and_cover_builder/llm_generate_cover_letter_from_job.py
 import os
 import textwrap
+
+try:
+    import openai_compat  # noqa: F401
+except Exception:
+    openai_compat = None
+
 from ..utils import LoggerChatModel
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate

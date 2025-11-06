@@ -8,6 +8,12 @@ import textwrap
 import re
 from pathlib import Path
 from typing import Dict, Optional
+
+try:
+    import openai_compat  # noqa: F401
+except Exception:
+    openai_compat = None
+
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings

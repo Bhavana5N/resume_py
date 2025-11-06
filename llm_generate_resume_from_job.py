@@ -3,6 +3,12 @@ Create a class that generates a job description based on a resume and a job desc
 """
 # app/libs/resume_and_cover_builder/llm_generate_resume_from_job.py
 import os
+
+try:
+    import openai_compat  # noqa: F401
+except Exception:
+    openai_compat = None
+
 from src.libs.resume_and_cover_builder.llm.llm_generate_resume import LLMResumer
 from src.libs.resume_and_cover_builder.utils import LoggerChatModel
 from langchain_core.output_parsers import StrOutputParser

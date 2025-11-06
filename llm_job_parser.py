@@ -3,6 +3,12 @@ import tempfile
 import textwrap
 import time
 import re  # For email validation
+
+try:
+    import openai_compat  # noqa: F401
+except Exception:
+    openai_compat = None
+
 from src.libs.resume_and_cover_builder.utils import LoggerChatModel
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate, PromptTemplate

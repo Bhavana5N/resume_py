@@ -4,6 +4,11 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict
 
+try:
+    import openai_compat  # noqa: F401
+except Exception:
+    openai_compat = None
+
 from docx import Document
 
 from resume_builder_templates import (
