@@ -35,8 +35,6 @@
     "enabled": true,
     "model": "gpt-4o-mini"
   },
-  "use_job_app_generator": true,
-  "use_llm_resumer": true,
   "auto_tailor_resume": true,
   "tailor_threshold": 40,
   "cover_letter": {

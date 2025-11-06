@@ -8,6 +8,13 @@ from datetime import datetime
 from urllib.parse import urljoin, urlparse
 from pathlib import Path
 from typing import Any
+try:
+    from dotenv import load_dotenv
+except Exception:
+    load_dotenv = None
+
+if load_dotenv:
+    load_dotenv()
 
 import requests
 from rapidfuzz import fuzz
@@ -52,6 +59,12 @@ try:
     LLM_PARSER_AVAILABLE = True
 except Exception:
     LLM_PARSER_AVAILABLE = False
+try:
+    from llm_job_parser import LLMParser as LLMJobHTMLParser
+    LLM_JOB_HTML_PARSER_AVAILABLE = True
+except Exception:
+    LLM_JOB_HTML_PARSER_AVAILABLE = False
+    LLMJobHTMLParser = None
 
 try:
     from selenium_scraper import (
@@ -601,12 +614,43 @@ def main() -> None:
                 company = (j.get("company") or "").strip() or "Company"
                 role = (j.get("title") or "").strip() or "Role"
                 jd_text = (j.get("description") or "").strip()
+                job_url = (j.get("url") or "").strip()
                 base = re.sub(r"[^A-Za-z0-9._-]+", "_", f"{company}_{role}")[:80]
                 llm_resume_generated = False
                 llm_resume_text = None
                 builder_tailored = builder
                 should_force_llm_resume = False
                 
+                if (
+                    len(jd_text) < 50
+                    and job_url
+                    and LLM_JOB_HTML_PARSER_AVAILABLE
+                    and use_openai
+                    and openai_key
+                ):
+                    try:
+                        print(f"  [parser-html] Fetching job posting for {company}...")
+                        resp = requests.get(job_url, timeout=30)
+                        resp.raise_for_status()
+                        html_content = resp.text
+                        job_html_parser = LLMJobHTMLParser(openai_key)
+                        job_html_parser.set_body_html(html_content)
+                        extracted_desc = job_html_parser.extract_job_description()
+                        if extracted_desc:
+                            jd_text = extracted_desc.strip()
+                            j["description"] = jd_text
+                            print(
+                                f"  [parser-html] Extracted description ({len(jd_text)} chars) for {company}"
+                            )
+                        else:
+                            print(
+                                f"  [parser-html] No description extracted for {company}"
+                            )
+                    except Exception as e:
+                        print(
+                            f"  [parser-html] Failed to extract description for {company}: {e}"
+                        )
+
                 # Debug: log job details
                 print(f"[cover] {idx+1}/100: {company} - {role} | Score: {score} | JD length: {len(jd_text)} chars")
                 if len(jd_text) < 50:

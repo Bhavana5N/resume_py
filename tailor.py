@@ -3,6 +3,13 @@ import os
 import re
 from datetime import datetime
 from pathlib import Path
+try:
+    from dotenv import load_dotenv
+except Exception:
+    load_dotenv = None
+
+if load_dotenv:
+    load_dotenv()
 
 from docx import Document
 
