@@ -6,18 +6,6 @@
   "run_both": true,
   "selenium_only": true,
   "save_fetched": true,
-  "fetch": {
-    "mode": "company",
-    "company_source": "lever",
-      "companies": ["uber", "apple", "meta", "openai"],
-    "query": "python|ml|data|engineer"
-  },
-  "free_options": {
-    "mode": "free",
-    "source": "remoteok",
-    "query": "",
-    "location": null
-  },
   "company_options": {
     "mode": "company",
     "company_source": "lever",
