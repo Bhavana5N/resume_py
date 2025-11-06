@@ -663,7 +663,7 @@ def main() -> None:
                 fetched = fetched['items']  # normalize
             if not isinstance(fetched, list):
                 fetched = []
-            fetched = fetched[: args.fetch_limit]
+            fetched = fetched[: int(resolved_cfg.get("fetch_limit", 200))]
 
     # Optional Selenium fetch
     use_selenium = bool(selenium_opts.get("enabled"))
