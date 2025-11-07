@@ -626,16 +626,22 @@ def main() -> None:
                 builder_tailored = builder
                 should_force_llm_resume = False
                 
+                html_parsed_info = {}
                 if (
-                    len(jd_text) < 50
-                    and job_url
+                    job_url
                     and LLM_JOB_HTML_PARSER_AVAILABLE
                     and use_openai
                     and openai_key
                 ):
                     try:
                         print(f"  [parser-html] Fetching job posting for {company}...")
-                        resp = requests.get(job_url, timeout=30)
+                        headers = {
+                            "User-Agent": (
+                                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                                "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36"
+                            )
+                        }
+                        resp = requests.get(job_url, timeout=30, headers=headers)
                         resp.raise_for_status()
                         html_content = resp.text
                         job_html_parser = LLMJobHTMLParser(openai_key)
@@ -651,10 +657,39 @@ def main() -> None:
                             print(
                                 f"  [parser-html] No description extracted for {company}"
                             )
+
+                        try:
+                            html_parsed_info = {
+                                "company": job_html_parser.extract_company_name(),
+                                "role": job_html_parser.extract_role(),
+                                "location": job_html_parser.extract_location(),
+                                "description": job_html_parser.extract_job_description(),
+                                "required_skills": job_html_parser._extract_information(
+                                    "What are the required skills and responsibilities?",
+                                    "Responsibilities requirements"
+                                ),
+                            }
+                        except Exception:
+                            html_parsed_info = {}
                     except Exception as e:
                         print(
                             f"  [parser-html] Failed to extract description for {company}: {e}"
                         )
+
+                if html_parsed_info:
+                    if html_parsed_info.get("company"):
+                        company = html_parsed_info["company"].strip() or company
+                        j["company"] = company
+                    if html_parsed_info.get("role"):
+                        role = html_parsed_info["role"].strip() or role
+                        j["title"] = role
+                    if html_parsed_info.get("location"):
+                        j["location"] = html_parsed_info["location"]
+                    if html_parsed_info.get("description") and not jd_text:
+                        jd_text = html_parsed_info["description"].strip()
+                        j["description"] = jd_text
+                    if html_parsed_info.get("required_skills"):
+                        j["parsed_required_skills"] = html_parsed_info["required_skills"].strip()
 
                 # Debug: log job details
                 print(f"[cover] {idx+1}/100: {company} - {role} | Score: {score} | JD length: {len(jd_text)} chars")
@@ -662,17 +697,21 @@ def main() -> None:
                     print(f"  WARNING: Job description too short or empty for {company}")
                 
                 # Use LLMParser to enrich job information if available
-                parsed_info = None
+                parsed_info = dict(html_parsed_info)
                 if use_llm_parser and jd_text:
                     try:
                         print(f"  [parser] Parsing job description for {company}...")
-                        parsed_info = llm_parser.parse_job_from_text(jd_text)
+                        parsed_from_text = llm_parser.parse_job_from_text(jd_text)
+                        if parsed_from_text:
+                            parsed_info.update(parsed_from_text)
                         
                         # Update job fields with parsed information if better
                         if parsed_info.get("company") and parsed_info["company"] != "Not specified":
                             company = parsed_info["company"]
+                            j["company"] = company
                         if parsed_info.get("role") and parsed_info["role"] != "Not specified":
                             role = parsed_info["role"]
+                            j["title"] = role
                         
                         # Save parsed info
                         if parsed_info:
@@ -690,7 +729,7 @@ def main() -> None:
                                 f.write(f"Description:\n{parsed_info.get('description', 'N/A')}\n")
                     except Exception as e:
                         print(f"  [parser] Error parsing {company}: {e}")
-                        parsed_info = None
+                        parsed_info = dict(html_parsed_info)
                 
                 job_summary_override = ""
                 job_description_override = jd_text
