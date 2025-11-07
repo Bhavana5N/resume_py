@@ -40,13 +40,14 @@ logger.add(log_path / "gpt_resume.log", rotation="1 day", compression="zip", ret
 
 class LLMParser:
     def __init__(self, openai_api_key):
+        embedding_model = os.getenv("OPENAI_EMBED_MODEL", "text-embedding-ada-002")
         self.llm = LoggerChatModel(
             ChatOpenAI(
                 model="gpt-4o-mini", api_key=openai_api_key, temperature=0.4
             )
         )
         self.llm_embeddings = OpenAIEmbeddings(
-            model="text-embedding-3-small",
+            model=embedding_model,
             api_key=openai_api_key,
         )  # Initialize embeddings
         self.vectorstore = None  # Will be initialized after document loading

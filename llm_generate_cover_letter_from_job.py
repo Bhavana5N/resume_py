@@ -32,11 +32,12 @@ logger.add(log_path / "gpt_cover_letter_job_descr.log", rotation="1 day", compre
 
 class LLMCoverLetterJobDescription:
     def __init__(self, openai_api_key, strings):
+        embedding_model = os.getenv("OPENAI_EMBED_MODEL", "text-embedding-ada-002")
         self.llm_cheap = LoggerChatModel(
             ChatOpenAI(model="gpt-4o-mini", api_key=openai_api_key, temperature=0.4)
         )
         self.llm_embeddings = OpenAIEmbeddings(
-            model="text-embedding-3-small",
+            model=embedding_model,
             api_key=openai_api_key,
         )
         self.strings = strings

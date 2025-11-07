@@ -31,13 +31,14 @@ class LLMCoverLetterJobDescription:
         if not api_key:
             raise ValueError("OpenAI API key required")
         
+        embedding_model = os.getenv("OPENAI_EMBED_MODEL", "text-embedding-ada-002")
         self.llm = ChatOpenAI(
             model="gpt-4o-mini",
             api_key=api_key,
             temperature=0.4
         )
         self.llm_embeddings = OpenAIEmbeddings(
-            model="text-embedding-3-small",
+            model=embedding_model,
             api_key=api_key,
         )
         self.resume: Optional[str] = None
