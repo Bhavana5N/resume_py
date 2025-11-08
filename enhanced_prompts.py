@@ -14,54 +14,186 @@ Job Description: {job_description}
 **Candidate's Background:**
 {resume_text}
 
-**Requirements:**
-1. Create a 2-PAGE professional resume tailored for this specific role
-2. Start with a PROFESSIONAL SUMMARY section with EXACTLY 10 bullet points highlighting:
-   - Most relevant skills and expertise for THIS specific role
-   - Quantifiable achievements that match the job requirements
-   - Technical proficiencies mentioned in the job description
-   - Leadership and collaboration abilities
-   - Domain expertise relevant to the company/industry
+**CRITICAL REQUIREMENTS:**
+
+1. **Header Section:**
+   - Candidate's full name
+   - Contact: Email | Phone | GitHub | LinkedIn (all on one line)
+
+2. **PROFESSIONAL SUMMARY - MUST HAVE EXACTLY 10 BULLET POINTS:**
+   Section header: "PROFESSIONAL SUMMARY"
+   - Bullet 1: Years of experience + core expertise relevant to this role
+   - Bullet 2: Specific quantifiable achievement (#1 - must include numbers/percentages)
+   - Bullet 3: Specific quantifiable achievement (#2 - must include numbers/percentages)
+   - Bullet 4: Technical skills/technologies from job description
+   - Bullet 5: Leadership/team collaboration achievement
+   - Bullet 6: System architecture or scalability achievement
+   - Bullet 7: Process improvement or efficiency gain
+   - Bullet 8: Cross-functional collaboration or stakeholder management
+   - Bullet 9: Domain expertise or industry-specific knowledge
+   - Bullet 10: Professional development, certifications, or thought leadership
    
-3. WORK EXPERIENCE section:
-   - Prioritize the MOST RECENT and MOST RELEVANT experience for this role
-   - Include 2-3 most recent positions that align with the job requirements
-   - For each position, provide 4-6 impactful bullet points that:
-     * Use strong action verbs (Led, Architected, Implemented, Optimized, etc.)
-     * Include quantifiable results (%, $, time saved, users impacted, etc.)
-     * Highlight technologies and skills mentioned in the job description
-     * Demonstrate progression and increasing responsibility
-   - If older experience is highly relevant, include 1-2 additional positions with fewer bullets
+   **Each bullet MUST:**
+   - Start with a strong action verb (Led, Architected, Developed, Optimized, Implemented)
+   - Include specific numbers, percentages, or measurable impact
+   - Be 1-2 lines maximum
+   - Directly relate to the job requirements
 
-4. TECHNICAL SKILLS section:
-   - Organize by category (Languages, Frameworks, Cloud/DevOps, Databases, etc.)
-   - Prioritize skills mentioned in the job description
-   - Include proficiency levels if relevant
+3. **WORK EXPERIENCE Section:**
+   Section header: "WORK EXPERIENCE"
+   
+   For EACH position, use this EXACT format:
+   ```
+   Job Title | Actual Company Name
+   Month Year – Month Year | City, State/Country
+   • Achievement with quantifiable result (e.g., "Reduced costs by 40% ($500K annually)")
+   • Achievement with quantifiable result
+   • Achievement with quantifiable result
+   • Achievement with quantifiable result
+   ```
+   
+   **CRITICAL:** 
+   - Use the REAL company names from the candidate's background
+   - Use the REAL job titles from the candidate's background
+   - Include 2-3 most recent positions
+   - Each position must have 4-6 bullet points
+   - Focus on achievements that match the target job requirements
 
-5. EDUCATION section:
-   - Degree, institution, graduation year
-   - GPA if >3.5
-   - Relevant coursework if early career
+4. **EDUCATION Section:**
+   Section header: "EDUCATION"
+   ```
+   Degree Name | University Name
+   Month Year – Month Year | GPA: X.X/4.0
+   - Thesis/Notable achievement (if applicable)
+   ```
 
-6. Optional sections (if space allows and relevant):
-   - KEY PROJECTS: 2-3 impressive projects with measurable outcomes
-   - CERTIFICATIONS: Industry-recognized certifications
-   - PUBLICATIONS/PATENTS: If in research/technical role
+5. **TECHNICAL SKILLS Section:**
+   Section header: "TECHNICAL SKILLS"
+   Organize in categories with clear labels (use ** for bold category names):
+   ```
+   **Programming Languages:** Python, C++, JavaScript, Java, Shell Scripting
+   **Frameworks & Platforms:** Django, Flask, React JS, PyTorch, TensorFlow, Keras, OpenCV
+   **Cloud Technologies:** AWS (S3, Lambda, CloudFormation, DynamoDB, SageMaker), Azure
+   **Automation & DevOps Tools:** Docker, Jenkins, CI/CD Pipelines, Terraform, Ansible
+   **Data Management:** Snowflake, PostgreSQL, SQLite, SQL, DynamoDB
+   **Visualization Tools:** Plotly, Dash, Matplotlib
+   **Version Control:** Git, GitHub, Bitbucket
+   **Operating Systems:** Linux (Ubuntu, RedHat), macOS
+   ```
+   - Prioritize skills from the job description
+   - Keep it concise and organized
+   - Use bold (**text**) for category names
 
-**Formatting Guidelines:**
-- Use clean, professional formatting
-- Keep consistent tense (past tense for previous roles, present for current)
-- No personal pronouns
-- Focus on achievements, not just responsibilities
-- Tailor language to match the company's culture and values
-- Ensure content fits naturally into 2 pages
+6. **FUNCTIONAL EXPERTISE Section:**
+   Section header: "FUNCTIONAL EXPERTISE"
+   Format like Technical Skills with categories:
+   ```
+   **Machine Learning & AI:** ML pipeline development, clustering algorithms, trust modeling, Bayesian models
+   **Software Integration & Validation:** Middleware analysis, system debugging, testbench validation
+   **Pipeline Automation:** CI/CD pipeline creation, PR automation, dependency management
+   **Full Stack Development:** Flask, Django, Dash, React JS, SQL databases
+   **Computer Vision:** Camera object detection, 2D to 3D box mapping, emergency braking systems
+   ```
 
-**Output Format:**
-Provide the complete resume as formatted text, ready to be converted to PDF.
-Use clear section headers (all caps, e.g., "PROFESSIONAL SUMMARY", "WORK EXPERIENCE").
-Separate sections with blank lines.
+7. **KEY ACHIEVEMENTS Section:**
+   Section header: "KEY ACHIEVEMENTS"
+   Format with bullet points (extract from work experience):
+   ```
+   • Reduced manual validation and testing efforts by 70% through automation using Jenkins, Docker, and Azure
+   • Improved workflow efficiency by automating PR creation and dependency management with Azure Pipelines
+   • Created AUTOSIM prototype supporting multiple integrations, reducing manual effort by 70%
+   • Migrated object detection from 2D to 3D box mapping, improving system accuracy
+   • Enhanced deployment reliability by automating installation processes across virtual and real nodes
+   • Designed innovative tools that reduced release times and improved deployment workflows by 60%
+   ```
+   - Extract 5-8 most impressive achievements from work experience
+   - Each achievement must have quantifiable impact (%, time saved, cost reduction)
+   - Focus on achievements relevant to the target job
 
-Begin the resume with the candidate's name and contact information, then proceed with the sections as outlined.
+8. **PUBLICATIONS Section:**
+   Section header: "PUBLICATIONS"
+   Format with bullet points:
+   ```
+   • Bhavana Nare, et al., "Computational Trust Framework for Human-Robot Teams," IEEE Xplore, Document 11127674, 2024. Available at https://ieeexplore.ieee.org/document/11127674
+   ```
+   - Include all publications with full citations
+   - Add URLs if available
+
+9. **Optional Sections (if relevant):**
+   - CERTIFICATIONS (if applicable)
+   - KEY PROJECTS (if highly relevant)
+
+**OUTPUT FORMAT:**
+```
+Full Name
+email@domain.com | Phone | github.com/username | linkedin.com/in/username
+
+PROFESSIONAL SUMMARY
+• [Bullet point 1 with numbers]
+• [Bullet point 2 with numbers]
+• [Bullet point 3 with numbers]
+• [Bullet point 4 with numbers]
+• [Bullet point 5 with numbers]
+• [Bullet point 6 with numbers]
+• [Bullet point 7 with numbers]
+• [Bullet point 8 with numbers]
+• [Bullet point 9 with numbers]
+• [Bullet point 10 with numbers]
+
+WORK EXPERIENCE
+
+Job Title | Company Name
+Month Year – Month Year | Location
+• Achievement 1 with quantifiable results
+• Achievement 2 with quantifiable results
+• Achievement 3 with quantifiable results
+• Achievement 4 with quantifiable results
+
+[Repeat for 2-3 positions]
+
+EDUCATION
+
+Degree | University
+Month Year – Month Year | GPA: X.X/4.0
+
+TECHNICAL SKILLS
+
+**Programming Languages:** Python, C++, JavaScript, Java
+**Frameworks & Platforms:** Django, Flask, React JS, PyTorch, TensorFlow
+**Cloud Technologies:** AWS (S3, Lambda, CloudFormation), Azure
+**Automation & DevOps Tools:** Docker, Jenkins, CI/CD, Terraform
+**Data Management:** PostgreSQL, SQLite, SQL, DynamoDB
+**Visualization Tools:** Plotly, Dash, Matplotlib
+**Version Control:** Git, GitHub, Bitbucket
+
+FUNCTIONAL EXPERTISE
+
+**Machine Learning & AI:** ML pipeline development, clustering, trust modeling
+**Software Integration & Validation:** Middleware analysis, debugging, testbench validation
+**Pipeline Automation:** CI/CD pipeline creation, PR automation, dependency management
+**Full Stack Development:** Flask, Django, Dash, React JS, SQL databases
+**Computer Vision:** Camera object detection, 2D to 3D mapping, emergency braking systems
+
+KEY ACHIEVEMENTS
+
+• Reduced manual validation and testing efforts by 70% through automation using Jenkins, Docker, and Azure
+• Improved workflow efficiency by automating PR creation and dependency management with Azure Pipelines
+• Created AUTOSIM prototype supporting multiple integrations, reducing manual effort by 70%
+• Migrated object detection from 2D to 3D box mapping, improving system accuracy
+• Enhanced deployment reliability by automating installation processes across virtual and real nodes
+• Designed innovative tools that reduced release times and improved deployment workflows by 60%
+
+PUBLICATIONS
+
+• Bhavana Nare, et al., "Computational Trust Framework for Human-Robot Teams," IEEE Xplore, Document 11127674, 2024. Available at https://ieeexplore.ieee.org/document/11127674
+```
+
+**CRITICAL RULES:**
+- NO generic placeholders like "Company" or "Position"
+- USE REAL NAMES from the candidate's background
+- EXACTLY 10 bullet points in Professional Summary
+- EVERY achievement must include numbers/metrics
+- Focus on relevance to the target job
 """
 
 ENHANCED_COVER_LETTER_PROMPT = """

@@ -269,6 +269,44 @@ class PDFGenerator:
                         story.append(Spacer(1, 0.15*inch))
                     break
             
+            # Functional Expertise
+            for key in ['functional_expertise', 'functional_skills', 'domain_expertise']:
+                if key in sections and sections[key].strip():
+                    story.append(Paragraph("FUNCTIONAL EXPERTISE", self.styles['CustomSubHeader']))
+                    expertise_text = sections[key].replace('---', '').strip()
+                    if expertise_text:
+                        story.append(Paragraph(expertise_text, self.styles['Normal']))
+                        story.append(Spacer(1, 0.15*inch))
+                    break
+            
+            # Key Achievements
+            for key in ['achievements', 'key_achievements', 'accomplishments']:
+                if key in sections and sections[key].strip():
+                    story.append(Paragraph("KEY ACHIEVEMENTS", self.styles['CustomSubHeader']))
+                    achievement_text = sections[key]
+                    achievement_lines = [l.strip() for l in achievement_text.split('\n') if l.strip()]
+                    for line in achievement_lines[:10]:  # Max 10 achievements
+                        if line.startswith('•') or line.startswith('-'):
+                            story.append(Paragraph(line, self.styles['BulletPoint']))
+                        else:
+                            story.append(Paragraph(line, self.styles['Normal']))
+                    story.append(Spacer(1, 0.15*inch))
+                    break
+            
+            # Publications
+            for key in ['publications', 'papers', 'research']:
+                if key in sections and sections[key].strip():
+                    story.append(Paragraph("PUBLICATIONS", self.styles['CustomSubHeader']))
+                    pub_text = sections[key]
+                    pub_lines = [l.strip() for l in pub_text.split('\n') if l.strip()]
+                    for line in pub_lines:
+                        if line.startswith('•') or line.startswith('-'):
+                            story.append(Paragraph(line, self.styles['BulletPoint']))
+                        else:
+                            story.append(Paragraph(line, self.styles['Normal']))
+                    story.append(Spacer(1, 0.15*inch))
+                    break
+            
             # Projects (if space allows)
             for key in ['projects', 'key_projects']:
                 if key in sections and sections[key].strip():
@@ -420,6 +458,9 @@ class PDFGenerator:
             'experience': ['experience', 'employment', 'work history', 'work experience'],
             'education': ['education', 'academic'],
             'skills': ['skills', 'competencies', 'technical skills'],
+            'functional_expertise': ['functional expertise', 'functional skills', 'domain expertise'],
+            'achievements': ['key achievements', 'achievements', 'accomplishments'],
+            'publications': ['publications', 'papers', 'research'],
             'projects': ['projects', 'portfolio', 'key projects'],
             'certifications': ['certifications', 'licenses', 'certificates']
         }

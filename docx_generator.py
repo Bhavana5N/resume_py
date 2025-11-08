@@ -219,6 +219,55 @@ class WordDocumentGenerator:
                     doc.add_paragraph()  # Spacing
                     break
             
+            # Functional Expertise
+            for key in ['functional_expertise', 'functional_skills', 'domain_expertise']:
+                if key in sections_dict and sections_dict[key].strip():
+                    self._add_section_header(doc, "FUNCTIONAL EXPERTISE")
+                    
+                    expertise_text = sections_dict[key].replace('---', '').strip()
+                    if expertise_text:
+                        para = doc.add_paragraph(expertise_text)
+                        para.paragraph_format.space_after = Pt(6)
+                    
+                    doc.add_paragraph()  # Spacing
+                    break
+            
+            # Key Achievements
+            for key in ['achievements', 'key_achievements', 'accomplishments']:
+                if key in sections_dict and sections_dict[key].strip():
+                    self._add_section_header(doc, "KEY ACHIEVEMENTS")
+                    
+                    achievement_text = sections_dict[key]
+                    achievement_lines = [l.strip() for l in achievement_text.split('\n') if l.strip()]
+                    
+                    for line in achievement_lines[:10]:
+                        if line.startswith('•') or line.startswith('-'):
+                            self._add_bullet_point(doc, line.lstrip('•-*►▪→◆ '))
+                        else:
+                            para = doc.add_paragraph(line)
+                            para.paragraph_format.space_after = Pt(4)
+                    
+                    doc.add_paragraph()  # Spacing
+                    break
+            
+            # Publications
+            for key in ['publications', 'papers', 'research']:
+                if key in sections_dict and sections_dict[key].strip():
+                    self._add_section_header(doc, "PUBLICATIONS")
+                    
+                    pub_text = sections_dict[key]
+                    pub_lines = [l.strip() for l in pub_text.split('\n') if l.strip()]
+                    
+                    for line in pub_lines:
+                        if line.startswith('•') or line.startswith('-'):
+                            self._add_bullet_point(doc, line.lstrip('•-*►▪→◆ '))
+                        else:
+                            para = doc.add_paragraph(line)
+                            para.paragraph_format.space_after = Pt(4)
+                    
+                    doc.add_paragraph()  # Spacing
+                    break
+            
             # Projects
             for key in ['projects', 'key_projects']:
                 if key in sections_dict and sections_dict[key].strip():
@@ -300,6 +349,9 @@ class WordDocumentGenerator:
             'experience': ['experience', 'employment', 'work history', 'work experience'],
             'education': ['education', 'academic'],
             'skills': ['skills', 'competencies', 'technical skills'],
+            'functional_expertise': ['functional expertise', 'functional skills', 'domain expertise'],
+            'achievements': ['key achievements', 'achievements', 'accomplishments'],
+            'publications': ['publications', 'papers', 'research'],
             'projects': ['projects', 'portfolio', 'key projects'],
             'certifications': ['certifications', 'licenses', 'certificates']
         }
