@@ -792,12 +792,30 @@ def main() -> None:
             filtered_without_urls = len(filtered_jobs) - filtered_with_urls
             print(f"[filter-debug] After score filter: {filtered_with_urls} jobs with URLs, {filtered_without_urls} without URLs")
             
-            # Debug: Show sample of filtered jobs
+            # Debug: Show score distribution and sample
+            print(f"\n[filter-debug] SCORE DISTRIBUTION:")
+            all_scores = [j.get("score", 0) for j in top[:100]]
+            if all_scores:
+                avg_score = sum(all_scores) / len(all_scores)
+                max_score = max(all_scores)
+                min_score = min(all_scores)
+                print(f"  - Average score: {avg_score:.2f}")
+                print(f"  - Max score: {max_score:.2f}")
+                print(f"  - Min score: {min_score:.2f}")
+                print(f"  - Score threshold: {score_threshold}")
+                print(f"  - Jobs above threshold: {len(filtered_jobs)}/{len(top[:100])}")
+            
             if filtered_jobs:
-                print(f"[filter] Sample jobs after score filter:")
-                for j in filtered_jobs[:3]:
+                print(f"\n[filter] ✅ Sample jobs after score filter:")
+                for j in filtered_jobs[:5]:
                     url_status = "✅" if j.get("url") else "❌ NO URL"
-                    print(f"  - {j.get('company', 'N/A')}: {j.get('title', 'N/A')} (score: {j.get('score', 0)}, location: {j.get('location', 'N/A')}, URL: {url_status})")
+                    print(f"  - {j.get('company', 'N/A')}: {j.get('title', 'N/A')[:50]} | Score: {j.get('score', 0):.1f} | {url_status}")
+            else:
+                print(f"\n[filter] ❌ NO JOBS ABOVE SCORE THRESHOLD!")
+                print(f"[filter] Top 5 jobs (all below threshold):")
+                for j in top[:5]:
+                    print(f"  - {j.get('company', 'N/A')}: {j.get('title', 'N/A')[:50]} | Score: {j.get('score', 0):.1f}")
+                print(f"\n[filter] 💡 ACTION: Lower min_score in config.json to {min_score:.1f} or lower")
 
             # Track best job per company from the entire candidate set (top 100) for fallback usage
             company_targets: list[str] = []
@@ -1273,8 +1291,10 @@ def main() -> None:
                     except Exception as e:
                         print(f"  [extractor] Failed to fetch/extract from URL: {e}")
 
-                # Debug: log job details
-                print(f"[cover] {idx+1}/100: {company} - {role} | Score: {score} | JD length: {len(jd_text)} chars")
+                # Debug: log job details with detailed info
+                has_url = "✅" if job_url else "❌ NO URL"
+                has_desc = f"✅ {len(jd_text)} chars" if jd_text else "❌ NO DESC"
+                print(f"[cover] {idx+1}/100: {company_label} - {role_label} | Score: {score:.1f} | URL: {has_url} | Desc: {has_desc}")
                 
                 # Check if visa sponsorship is available (disabled by default - set check_enabled=True to enable)
                 has_sponsorship = check_sponsorship_available(jd_text, check_enabled=False)  # 🔴 SET TO True TO ENABLE
@@ -1433,6 +1453,10 @@ def main() -> None:
                 
                 if use_job_app_gen and auto_tailor and jd_text:
                     try:
+                        print(f"\n  ✅ RESUME GENERATION ATTEMPT:")
+                        print(f"     - use_job_app_gen: True")
+                        print(f"     - auto_tailor: True")
+                        print(f"     - jd_text length: {len(jd_text)} chars")
                         print(f"  [jobgen] Generating application package for {company}...")
                         result = job_app_gen.generate_application_package(jd_text, company, role, parallel=True)
                         
@@ -1805,10 +1829,23 @@ def main() -> None:
         print(f"       - Blocked (no sponsorship): {filter_stats.get('sponsorship_blocked', 0)}")
         print(f"       - Passed sponsorship: {len(filtered_jobs) - filter_stats.get('sponsorship_blocked', 0)}")
         print(f"  4️⃣  Resumes created: {filter_stats.get('created', 0)}")
+        
+        # Show why resumes weren't created
+        if filter_stats.get('created', 0) == 0 and len(filtered_jobs) > 0:
+            print(f"\n⚠️  ISSUE: Jobs were filtered but NO RESUMES created!")
+            print(f"      Possible reasons:")
+            print(f"      - Jobs have no descriptions (<50 chars)")
+            print(f"      - Jobs have no valid URLs")
+            print(f"      - LLM generation failed")
+            print(f"      - auto_tailor is False")
+            print(f"\n      💡 ACTION: Check logs for [ERROR], [WARNING], or [skip] messages")
     print(f"\n⚙️  CONFIG SETTINGS:")
     print(f"  - min_score: {score_threshold}")
     print(f"  - tailor_threshold: {tailor_threshold}")
     print(f"  - top_per_company_limit: {top_per_company_limit}")
+    print(f"  - auto_tailor_resume: {auto_tailor}")
+    print(f"  - use_job_app_gen: {use_job_app_gen}")
+    print(f"  - use_llm_resumer: {use_llm_resumer}")
     print(f"  - max possible resumes: {len(company_targets)} companies × {top_per_company_limit} = {len(company_targets) * top_per_company_limit}")
     print(f"  - companies: {len(company_targets)} ({', '.join(company_targets[:5])}...)")
     print(f"  - target_roles: {len(target_roles)} ({', '.join(target_roles[:3])}...)")
