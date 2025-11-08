@@ -42,6 +42,15 @@ class JobApplicationGenerator:
         self.resume_text = None
 
     @staticmethod
+    def _normalize_meta_field(value: str | None) -> str:
+        if not value:
+            return ""
+        cleaned = value.strip()
+        if cleaned.lower() in {"not specified", "not specified."}:
+            return ""
+        return cleaned
+
+    @staticmethod
     def _preprocess_template(template: str) -> str:
         """Remove leading whitespace and indentation."""
         return textwrap.dedent(template)
@@ -110,6 +119,9 @@ class JobApplicationGenerator:
         if not self.resume_text:
             raise ValueError("Base resume text must be set before generating outputs.")
 
+        company = self._normalize_meta_field(company)
+        role = self._normalize_meta_field(role)
+
         summary = job_summary or self.summarize_job_description(job_description)
         job_context = self._compose_job_context(job_description, summary)
 
@@ -138,6 +150,9 @@ class JobApplicationGenerator:
         """
         if not self.resume_text:
             raise ValueError("Base resume text must be set before generating outputs.")
+
+        company = self._normalize_meta_field(company)
+        role = self._normalize_meta_field(role)
 
         summary = job_summary or self.summarize_job_description(job_description)
         job_context = self._compose_job_context(job_description, summary)
@@ -175,6 +190,9 @@ class JobApplicationGenerator:
         """
         # Always generate job summary first
         job_summary = self.summarize_job_description(job_description)
+
+        company_clean = self._normalize_meta_field(company)
+        role_clean = self._normalize_meta_field(role)
         
         if parallel:
             # Generate resume and cover letter in parallel
@@ -182,15 +200,15 @@ class JobApplicationGenerator:
                 resume_future = executor.submit(
                     self.generate_tailored_resume,
                     job_description,
-                    company,
-                    role,
+                    company_clean,
+                    role_clean,
                     job_summary,
                 )
                 cover_letter_future = executor.submit(
                     self.generate_cover_letter,
                     job_description,
-                    company,
-                    role,
+                    company_clean,
+                    role_clean,
                     job_summary,
                 )
                 
@@ -203,10 +221,10 @@ class JobApplicationGenerator:
             # Sequential generation
             return {
                 "resume": self.generate_tailored_resume(
-                    job_description, company, role, job_summary
+                    job_description, company_clean, role_clean, job_summary
                 ),
                 "cover_letter": self.generate_cover_letter(
-                    job_description, company, role, job_summary
+                    job_description, company_clean, role_clean, job_summary
                 ),
                 "job_summary": job_summary
             }

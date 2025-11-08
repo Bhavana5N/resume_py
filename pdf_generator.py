@@ -12,6 +12,7 @@ from reportlab.lib.enums import TA_LEFT, TA_CENTER, TA_JUSTIFY
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, PageBreak, Table, TableStyle
 from reportlab.lib import colors
 from datetime import datetime
+import re
 
 
 class PDFGenerator:
@@ -152,8 +153,10 @@ class PDFGenerator:
                 contact_text = sections['contact'].replace('\n', ' | ')
                 story.append(Paragraph(contact_text, self.styles['ContactInfo']))
             
-            # Target position
-            if job_title and company_name:
+            # Target position (only if both are provided and not "Not specified")
+            if (job_title and company_name and 
+                job_title.lower() not in ("not specified", "not specified.") and
+                company_name.lower() not in ("not specified", "not specified.")):
                 story.append(Paragraph(
                     f"<b>Target Position:</b> {job_title} at {company_name}",
                     self.styles['Normal']
@@ -408,8 +411,10 @@ class PDFGenerator:
                 story.append(Paragraph(f"Hiring Manager<br/>{company_name}", self.styles['Normal']))
                 story.append(Spacer(1, 0.2*inch))
             
-            # Subject line
-            if job_title and company_name:
+            # Subject line (only if both are provided and not "Not specified")
+            if (job_title and company_name and 
+                job_title.lower() not in ("not specified", "not specified.") and
+                company_name.lower() not in ("not specified", "not specified.")):
                 story.append(Paragraph(
                     f"<b>Re: Application for {job_title} Position</b>",
                     self.styles['Normal']
@@ -417,9 +422,18 @@ class PDFGenerator:
                 story.append(Spacer(1, 0.2*inch))
             
             # Cover letter body
-            # Parse paragraphs and format
+            # Parse paragraphs and format, removing "Not specified" text
             paragraphs = [p.strip() for p in content.split('\n\n') if p.strip()]
             for para in paragraphs:
+                # Remove "Not specified" references
+                para = para.replace("Not specified.", "").replace("Not specified", "")
+                para = para.replace("Re: Application for Not specified. Position", "")
+                para = para.replace("Re: Application for Not specified Position", "")
+                para = re.sub(r'\s+', ' ', para).strip()  # Clean up extra spaces
+                
+                if not para:  # Skip empty paragraphs after cleaning
+                    continue
+                    
                 # Skip if it looks like a header or signature
                 if para.lower().startswith(('dear', 'sincerely', 'best regards')):
                     story.append(Paragraph(para, self.styles['Normal']))

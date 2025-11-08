@@ -87,8 +87,10 @@ class WordDocumentGenerator:
             # Add spacing
             doc.add_paragraph()
             
-            # Target Position
-            if job_title and company_name:
+            # Target Position (only if both are provided and not "Not specified")
+            if (job_title and company_name and 
+                job_title.lower() not in ("not specified", "not specified.") and
+                company_name.lower() not in ("not specified", "not specified.")):
                 target_para = doc.add_paragraph()
                 target_para.add_run('Target Position: ').bold = True
                 target_para.add_run(f'{job_title} at {company_name}')

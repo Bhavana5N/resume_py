@@ -23,6 +23,15 @@ except Exception:
 _non_alnum = re.compile(r"[^a-z0-9+#.\-\s]")
 
 
+def _normalize_meta_field(value: str | None) -> str:
+    if not value:
+        return ""
+    cleaned = value.strip()
+    if cleaned.lower() in {"not specified", "not specified."}:
+        return ""
+    return cleaned
+
+
 def _tokenize(text: str) -> list[str]:
     text = (text or "").lower()
     text = _non_alnum.sub(" ", text)
@@ -126,6 +135,10 @@ class CoverLetterBuilder:
         return doc
 
     def compose_concise_text(self, jd_text: str, company: str, role: str) -> str:
+        # Normalize inputs
+        company = _normalize_meta_field(company)
+        role = _normalize_meta_field(role)
+        
         rset = set(_tokenize(self.resume_text))
         jset = set(_tokenize(jd_text)) if jd_text else set()
         shared = [t for t in CORE_TERMS if t in rset and (not jset or t in jset)]
@@ -146,8 +159,11 @@ class CoverLetterBuilder:
                 "Owned pipelines, APIs, and CI/CD, improving reliability and developer velocity.",
             ]
 
+        company_phrase = company if company else "your team"
+        role_phrase = role if role else "role"
+        
         p1 = (
-            f"I’m excited about the {role or 'role'} at {company or 'your team'} because the responsibilities align "
+            f"I'm excited about the {role_phrase} at {company_phrase} because the responsibilities align "
             f"with my focus on building reliable, scalable systems. I blend ML/data engineering with strong software "
             f"craft, which maps closely to your requirements around impact and execution."
         )
@@ -156,15 +172,24 @@ class CoverLetterBuilder:
               f"{' ' + example_lines[2] if len(example_lines) > 2 else ''} "
               f"Key strengths for this role: {keywords_str}.").strip()
         p3 = (
-            f"{company or 'The team'}’s emphasis on thoughtful engineering and real-world outcomes resonates with my approach. "
-            f"I’d value the chance to contribute quickly, collaborate across functions, and raise the bar on quality and speed."
+            f"{company_phrase}'s emphasis on thoughtful engineering and real-world outcomes resonates with my approach. "
+            f"I'd value the chance to contribute quickly, collaborate across functions, and raise the bar on quality and speed."
         )
-        return "\n\n".join([p1, p2, p3])
+        result = "\n\n".join([p1, p2, p3])
+        
+        # Clean up any "Not specified" references that might have slipped through
+        result = result.replace("Not specified.", "").replace("Not specified", "")
+        result = re.sub(r'\s+', ' ', result).strip()
+        return result
 
     def compose_openai_text(self, jd_text: str, company: str, role: str, model: str, api_key: str | None) -> str | None:
         if not _OPENAI_AVAILABLE:
             return None
         try:
+            # Normalize inputs
+            company = _normalize_meta_field(company)
+            role = _normalize_meta_field(role)
+            
             key = api_key or os.getenv("OPENAI_API_KEY")
             if not key:
                 return None
@@ -172,14 +197,17 @@ class CoverLetterBuilder:
             system = (
                 "You are an expert technical recruiter and writing assistant. "
                 "Write a concise three-paragraph cover letter without greeting or signature. "
-                "Tone: professional, conversational, natural. Use the resume strengths and job requirements."
+                "Tone: professional, conversational, natural. Use the resume strengths and job requirements. "
+                "DO NOT use placeholder text like 'Not specified' - use generic phrases like 'your team' or 'this role' instead."
             )
+            company_phrase = company if company else "your organization"
+            role_phrase = role if role else "this role"
             user = (
-                f"Company: {company}\nRole: {role}\n\n"
+                f"Company: {company_phrase}\nRole: {role_phrase}\n\n"
                 f"Job description:\n{jd_text}\n\n"
                 f"Resume:\n{self.resume_text}\n\n"
                 "Rules:\n- Three short paragraphs\n- No greeting or signature\n- Reference concrete skills and outcomes "
-                "that align with the role\n- Avoid placeholders; write as final text\n"
+                "that align with the role\n- Avoid placeholders like 'Not specified'; use generic phrases instead\n"
             )
             resp = client.chat.completions.create(
                 model=model,
@@ -187,7 +215,12 @@ class CoverLetterBuilder:
                 temperature=0.6,
                 max_tokens=350,
             )
-            return (resp.choices[0].message.content or "").strip()
+            result = (resp.choices[0].message.content or "").strip()
+            
+            # Clean up any "Not specified" references that might have slipped through
+            result = result.replace("Not specified.", "").replace("Not specified", "")
+            result = re.sub(r'\s+', ' ', result).strip()
+            return result
         except Exception:
             return None
 
@@ -205,8 +238,8 @@ def main() -> None:
     resume_path = cl.get("resume") or cfg.get("resume")
     jd_path = cl.get("jd")
     name = cl.get("name", "")
-    company = cl.get("company", "")
-    role = cl.get("role", "")
+    company = _normalize_meta_field(cl.get("company", ""))
+    role = _normalize_meta_field(cl.get("role", ""))
     out = cl.get("out") or f"cover_letter_{datetime.now().strftime('%Y%m%d_%H%M%S')}.docx"
     if not resume_path or not jd_path:
         raise SystemExit("cover_letter.resume and cover_letter.jd must be set in config")

@@ -110,6 +110,17 @@ _non_alnum = re.compile(r"[^a-z0-9+#.\-\s]")
 _html_strip_re = re.compile(r"<[^>]+>")
 _html_script_style_re = re.compile(r"(?is)<(script|style).*?>.*?</\\1>")
 
+def _normalize_meta_field(value: str | None) -> str:
+    """Normalize company/role/location fields, stripping placeholder text."""
+    if not value:
+        return ""
+    cleaned = value.strip()
+    lowered = cleaned.lower()
+    if lowered in {"not specified", "not specified."}:
+        return ""
+    return cleaned
+
+
 def tokenize_for_fuzz(text: str) -> str:
     text = (text or "").lower()
     text = _non_alnum.sub(" ", text)
@@ -910,15 +921,17 @@ def main() -> None:
             def fetch_job_desc(job):
                 """Fetch and enrich job description in parallel."""
                 job_url = (job.get("url") or "").strip()
-                company = (job.get("company") or "").strip() or "Company"
-                role = (job.get("title") or "").strip() or "Role"
+                company = _normalize_meta_field(job.get("company"))
+                role = _normalize_meta_field(job.get("title"))
+                company_label = company or "Company"
+                role_label = role or "Role"
                 jd_text = (job.get("description") or "").strip()
                 
                 if not job_url:
-                    print(f"  [parallel-fetch] {company}: No URL, skipping fetch")
+                    print(f"  [parallel-fetch] {company_label}: No URL, skipping fetch")
                     return job
                 
-                print(f"  [parallel-fetch] {company}: Starting fetch from {job_url[:60]}...")
+                print(f"  [parallel-fetch] {company_label}: Starting fetch from {job_url[:60]}...")
                 
                 # ALWAYS try HTML parser first (best quality)
                 if LLM_JOB_HTML_PARSER_AVAILABLE and use_openai and openai_key:
@@ -937,30 +950,31 @@ def main() -> None:
                         extracted_desc = job_html_parser.extract_job_description()
                         if extracted_desc and len(extracted_desc) > 100:
                             job["description"] = extracted_desc.strip()
-                            print(f"  [parallel-fetch] {company}: ✅ {len(extracted_desc)} chars (HTML parser)")
+                            print(f"  [parallel-fetch] {company_label}: ✅ {len(extracted_desc)} chars (HTML parser)")
                             return job
                         else:
-                            print(f"  [parallel-fetch] {company}: HTML parser returned short/empty result")
+                            print(f"  [parallel-fetch] {company_label}: HTML parser returned short/empty result")
                     except Exception as e:
-                        print(f"  [parallel-fetch] {company}: HTML parser failed: {e}")
+                        print(f"  [parallel-fetch] {company_label}: HTML parser failed: {e}")
                 
                 # Fallback to plain text fetch (strip HTML tags)
                 try:
                     fallback_desc = fetch_job_description_plain(job_url)
                     if fallback_desc and len(fallback_desc) > 100:
                         job["description"] = fallback_desc
-                        print(f"  [parallel-fetch] {company}: ✅ {len(fallback_desc)} chars (plain text)")
+                        print(f"  [parallel-fetch] {company_label}: ✅ {len(fallback_desc)} chars (plain text)")
                         return job
                     else:
-                        print(f"  [parallel-fetch] {company}: Plain text fetch returned short/empty result")
+                        print(f"  [parallel-fetch] {company_label}: Plain text fetch returned short/empty result")
                 except Exception as e:
-                    print(f"  [parallel-fetch] {company}: Plain fetch failed: {e}")
+                    print(f"  [parallel-fetch] {company_label}: Plain fetch failed: {e}")
                 
                 # If still no description, create minimal one from title/company
                 if not job.get("description") or len(job.get("description", "")) < 50:
-                    minimal_desc = f"Position: {role} at {company}. Application URL: {job_url}"
+                    company_phrase = f" at {company_label}" if company_label else ""
+                    minimal_desc = f"Position: {role_label}{company_phrase}. Application URL: {job_url}"
                     job["description"] = minimal_desc
-                    print(f"  [parallel-fetch] {company}: ⚠️ Using minimal description ({len(minimal_desc)} chars)")
+                    print(f"  [parallel-fetch] {company_label}: ⚠️ Using minimal description ({len(minimal_desc)} chars)")
                 
                 return job
             
@@ -986,22 +1000,22 @@ def main() -> None:
             
             for idx, j in enumerate(filtered_jobs):
                 score = j.get("score", 0)
-                company = (j.get("company") or "").strip()
-                
-                # Fix company name if not specified
-                if not company or company.lower() in ["not specified", "not specified."]:
+                company = _normalize_meta_field(j.get("company"))
+                if not company:
                     source = j.get("source", "")
                     if ":" in source:
-                        company = source.split(":")[-1].strip().title()
-                        j["company"] = company  # Update the job object
+                        company = _normalize_meta_field(source.split(":")[-1].strip().title())
+                        j["company"] = company
+                company_label = company or "Company"
                 
-                if not company:
-                    company = "Company"
+                role = _normalize_meta_field(j.get("title"))
+                if not role and j.get("original_title"):
+                    role = _normalize_meta_field(j.get("original_title"))
+                role_label = role or "Role"
                 
-                role = (j.get("title") or "").strip() or "Role"
                 jd_text = (j.get("description") or "").strip()
                 job_url = (j.get("url") or "").strip()
-                base = re.sub(r"[^A-Za-z0-9._-]+", "_", f"{company}_{role}")[:80]
+                base = re.sub(r"[^A-Za-z0-9._-]+", "_", f"{company_label}_{role_label}")[:80]
                 key_primary = job_url or base
                 assets = job_assets.setdefault(key_primary, {"base": base})
                 if job_url:
@@ -1021,7 +1035,7 @@ def main() -> None:
                     and openai_key
                 ):
                     try:
-                        print(f"  [parser-html] Fetching job posting for {company}...")
+                        print(f"  [parser-html] Fetching job posting for {company_label}...")
                         headers = {
                             "User-Agent": (
                                 "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
@@ -1038,11 +1052,11 @@ def main() -> None:
                             jd_text = extracted_desc.strip()
                             j["description"] = jd_text
                             print(
-                                f"  [parser-html] Extracted description ({len(jd_text)} chars) for {company}"
+                                f"  [parser-html] Extracted description ({len(jd_text)} chars) for {company_label}"
                             )
                         else:
                             print(
-                                f"  [parser-html] No description extracted for {company}"
+                                f"  [parser-html] No description extracted for {company_label}"
                             )
 
                         try:
@@ -1060,16 +1074,22 @@ def main() -> None:
                             html_parsed_info = {}
                     except Exception as e:
                         print(
-                            f"  [parser-html] Failed to extract description for {company}: {e}"
+                            f"  [parser-html] Failed to extract description for {company_label}: {e}"
                         )
 
                 if html_parsed_info:
                     if html_parsed_info.get("company"):
-                        company = html_parsed_info["company"].strip() or company
-                        j["company"] = company
+                        company_from_html = _normalize_meta_field(html_parsed_info["company"])
+                        if company_from_html:
+                            company = company_from_html
+                            company_label = company
+                            j["company"] = company
                     if html_parsed_info.get("role"):
-                        role = html_parsed_info["role"].strip() or role
-                        j["title"] = role
+                        role_from_html = _normalize_meta_field(html_parsed_info["role"])
+                        if role_from_html:
+                            role = role_from_html
+                            role_label = role
+                            j["title"] = role
                     if html_parsed_info.get("location"):
                         j["location"] = html_parsed_info["location"]
                     if html_parsed_info.get("description") and not jd_text:
@@ -1079,6 +1099,8 @@ def main() -> None:
                         j["parsed_required_skills"] = html_parsed_info["required_skills"].strip()
                     assets["company"] = company
                     assets["role"] = role
+                    company_label = company or company_label
+                    role_label = role or role_label
 
                 if (not jd_text or len(jd_text) < 200) and job_url:
                     print(f"  [fetch] Job description too short, trying direct fetch from URL...")

@@ -16,28 +16,37 @@ Job Description: {job_description}
 
 **CRITICAL REQUIREMENTS:**
 
+**JOB DESCRIPTION ANALYSIS - READ THIS FIRST:**
+1. Identify the TOP 5-7 key requirements from the job description (technologies, skills, responsibilities)
+2. Identify the TOP 3-5 keywords/phrases that appear multiple times in the job description
+3. Identify the PRIMARY focus areas (e.g., "machine learning", "cloud infrastructure", "full-stack development", "data engineering")
+4. Match candidate's experience to these requirements and HIGHLIGHT matching achievements prominently
+
 1. **Header Section:**
    - Candidate's full name
    - Contact: Email | Phone | GitHub | LinkedIn (all on one line)
 
 2. **PROFESSIONAL SUMMARY - MUST HAVE EXACTLY 10 BULLET POINTS:**
    Section header: "PROFESSIONAL SUMMARY"
-   - Bullet 1: Years of experience + core expertise relevant to this role
-   - Bullet 2: Specific quantifiable achievement (#1 - must include numbers/percentages)
-   - Bullet 3: Specific quantifiable achievement (#2 - must include numbers/percentages)
-   - Bullet 4: Technical skills/technologies from job description
-   - Bullet 5: Leadership/team collaboration achievement
-   - Bullet 6: System architecture or scalability achievement
-   - Bullet 7: Process improvement or efficiency gain
-   - Bullet 8: Cross-functional collaboration or stakeholder management
-   - Bullet 9: Domain expertise or industry-specific knowledge
-   - Bullet 10: Professional development, certifications, or thought leadership
+   
+   **PRIORITIZE JOB-SPECIFIC CONTENT:**
+   - Bullet 1: Years of experience + PRIMARY expertise area from job description (use exact keywords from JD)
+   - Bullet 2: Achievement using KEY TECHNOLOGY from job description (e.g., if JD mentions "AWS", highlight AWS achievements)
+   - Bullet 3: Achievement using KEY TECHNOLOGY from job description (e.g., if JD mentions "Python", highlight Python achievements)
+   - Bullet 4: Achievement matching PRIMARY RESPONSIBILITY from job description (use similar language/phrasing)
+   - Bullet 5: Achievement matching SECONDARY RESPONSIBILITY from job description
+   - Bullet 6: Leadership/team collaboration achievement (if mentioned in JD)
+   - Bullet 7: System architecture/scalability achievement (if mentioned in JD)
+   - Bullet 8: Process improvement/efficiency gain matching JD requirements
+   - Bullet 9: Cross-functional collaboration matching JD requirements
+   - Bullet 10: Domain expertise/industry knowledge matching JD requirements
    
    **Each bullet MUST:**
    - Start with a strong action verb (Led, Architected, Developed, Optimized, Implemented)
    - Include specific numbers, percentages, or measurable impact
    - Be 1-2 lines maximum
-   - Directly relate to the job requirements
+   - Use KEYWORDS and PHRASES directly from the job description
+   - Prioritize achievements that match job requirements over generic accomplishments
 
 3. **WORK EXPERIENCE Section:**
    Section header: "WORK EXPERIENCE"
@@ -52,12 +61,21 @@ Job Description: {job_description}
    • Achievement with quantifiable result
    ```
    
-   **CRITICAL:** 
+   **CRITICAL - JOB-SPECIFIC TAILORING:** 
    - Use the REAL company names from the candidate's background
    - Use the REAL job titles from the candidate's background
-   - Include 2-3 most recent positions
+   - Include 2-3 most recent positions (prioritize positions with experience matching JD requirements)
    - Each position must have 4-6 bullet points
-   - Focus on achievements that match the target job requirements
+   - **FOR EACH BULLET POINT:**
+     * Prioritize achievements that use KEYWORDS from the job description
+     * If the job description mentions specific technologies (e.g., "Kubernetes", "TensorFlow", "React"), 
+       highlight achievements using those EXACT technologies
+     * If the job description mentions specific responsibilities (e.g., "ML pipeline development", 
+       "microservices architecture"), highlight achievements matching those responsibilities
+     * Use similar language/phrasing from the job description (e.g., if JD says "scalable systems", 
+       use "scalable systems" in your bullet points)
+     * Reorder bullet points to put most relevant achievements FIRST
+   - If a position has no relevant achievements, reduce it to 2-3 bullets or skip it entirely
 
 4. **EDUCATION Section:**
    Section header: "EDUCATION"
@@ -80,7 +98,13 @@ Job Description: {job_description}
    **Version Control:** Git, GitHub, Bitbucket
    **Operating Systems:** Linux (Ubuntu, RedHat), macOS
    ```
-   - Prioritize skills from the job description
+   **JOB-SPECIFIC PRIORITIZATION:**
+   - **FIRST**: List ALL skills mentioned in the job description (even if candidate has limited experience)
+   - **SECOND**: List skills from candidate's background that match job requirements
+   - **THIRD**: List other relevant skills
+   - If job description mentions specific tools/technologies, create a dedicated category for them
+   - Reorder categories to put most relevant skills FIRST
+   - Use EXACT terminology from the job description (e.g., if JD says "Kubernetes", don't just say "container orchestration")
    - Keep it concise and organized
    - Use bold (**text**) for category names
 
