@@ -848,8 +848,6 @@ def main() -> None:
                     company = _job_company_key(j)
                     if not company:
                         continue
-                    
-                score = j.get("score", 0)
                     bucket = company_map.setdefault(company, [])
                     bucket.append(j)
 
