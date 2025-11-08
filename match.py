@@ -684,6 +684,9 @@ def main() -> None:
             score_threshold = float(resolved_cfg.get("min_score", 60))
             target_locations = resolved_cfg.get("target_locations", [])
             top_per_company = bool(resolved_cfg.get("top_per_company", False))
+            top_per_company_limit = int(resolved_cfg.get("top_per_company_limit", 1) or 1)
+            if top_per_company_limit < 1:
+                top_per_company_limit = 1
             
             print(f"[filter] Starting with {len(top[:100])} jobs")
             print(f"[filter] Filtering jobs with score >= {score_threshold}")
@@ -701,7 +704,91 @@ def main() -> None:
                 print(f"[filter] Sample jobs after score filter:")
                 for j in filtered_jobs[:3]:
                     print(f"  - {j.get('company', 'N/A')}: {j.get('title', 'N/A')} (score: {j.get('score', 0)}, location: {j.get('location', 'N/A')})")
+
+            # Track best job per company from the entire candidate set (top 100) for fallback usage
+            company_targets: list[str] = []
+            try:
+                company_targets = [
+                    (c or "").lower().strip()
+                    for c in resolved_cfg.get("companies", [])
+                    if c and str(c).strip()
+                ]
+            except Exception:
+                company_targets = []
+
+            def _job_company_key(job: dict[str, Any]) -> str:
+                company_key = (job.get("company") or "").lower().strip()
+                if not company_key or company_key in ("not specified", "not specified."):
+                    source = job.get("source", "")
+                    if ":" in source:
+                        company_key = source.split(":")[-1].strip().lower()
+                return company_key
+
+            best_jobs_by_company: dict[str, list[dict[str, Any]]] = {}
+            for job in top[:100]:
+                company_key = _job_company_key(job)
+                if not company_key:
+                    continue
+                bucket = best_jobs_by_company.setdefault(company_key, [])
+                bucket.append(job)
+
+            for bucket in best_jobs_by_company.values():
+                bucket.sort(key=lambda x: x.get("score", 0), reverse=True)
             
+            # Filter by target roles if provided
+            target_roles = [role.strip() for role in resolved_cfg.get("target_roles", []) if role and role.strip()]
+            if target_roles:
+                print(f"[filter] Target roles: {', '.join(target_roles[:8])}" + (" ..." if len(target_roles) > 8 else ""))
+
+                def _normalize_role_text(text: str) -> str:
+                    """Lowercase and strip punctuation for consistent comparisons."""
+                    return re.sub(r"[^a-z0-9\\s]", " ", text.lower()).strip()
+
+                normalized_roles = [_normalize_role_text(role) for role in target_roles if _normalize_role_text(role)]
+                role_filtered_jobs = []
+                removed_titles = []
+
+                for job in filtered_jobs:
+                    raw_title = (job.get("title") or "").strip()
+                    title_norm = _normalize_role_text(raw_title)
+
+                    if not title_norm:
+                        removed_titles.append(raw_title or "(missing title)")
+                        continue
+
+                    title_words = set(title_norm.split())
+                    matched = False
+
+                    for role_norm in normalized_roles:
+                        role_words = [w for w in role_norm.split() if w]
+                        if not role_words:
+                            continue
+
+                        # Direct substring match (e.g., "software engineer" in "senior software engineer")
+                        if role_norm in title_norm:
+                            matched = True
+                            break
+
+                        # All role words present somewhere in title, order agnostic
+                        if all(word in title_words for word in role_words):
+                            matched = True
+                            break
+
+                    if matched:
+                        role_filtered_jobs.append(job)
+                    else:
+                        removed_titles.append(raw_title or "(missing title)")
+
+                if role_filtered_jobs:
+                    removed_count = len(filtered_jobs) - len(role_filtered_jobs)
+                    print(f"[filter] After role filter: {len(role_filtered_jobs)} jobs (removed {removed_count})")
+                    if removed_titles:
+                        sample_removed = ", ".join(removed_titles[:3])
+                        print(f"[filter] Skipped roles not matching preferences: {sample_removed}" + ("..." if len(removed_titles) > 3 else ""))
+                    filtered_jobs = role_filtered_jobs
+                else:
+                    print(f"[filter] WARNING: Role filter eliminated all jobs. Retaining previous list.")
+
             # Filter by location if specified (AFTER fetching, not in URL)
             if target_locations and filtered_jobs:
                 location_matched_jobs = []
@@ -718,30 +805,60 @@ def main() -> None:
                     filtered_jobs = location_matched_jobs
                 else:
                     print(f"[filter] WARNING: No jobs match target locations. Processing all {len(filtered_jobs)} jobs.")
+
+            # Ensure each configured company has at least one job (fallback)
+            if company_targets:
+                company_counts: dict[str, int] = {}
+                for job in filtered_jobs:
+                    company_key = _job_company_key(job)
+                    if company_key:
+                        company_counts[company_key] = company_counts.get(company_key, 0) + 1
+
+                fallback_added: list[str] = []
+                for company_key in company_targets:
+                    if not company_key:
+                        continue
+                    needed = top_per_company_limit if top_per_company else 1
+                    existing = company_counts.get(company_key, 0)
+                    if existing >= needed:
+                        continue
+                    candidates = best_jobs_by_company.get(company_key, [])
+                    if not candidates:
+                        continue
+                    for candidate in candidates:
+                        candidate_id = candidate.get("url") or candidate.get("id") or ""
+                        if candidate_id and any(candidate_id == (job.get("url") or job.get("id") or "") for job in filtered_jobs):
+                            continue
+                        filtered_jobs.append(candidate)
+                        existing += 1
+                        company_counts[company_key] = existing
+                        fallback_added.append(f"{company_key} ({candidate.get('title', 'N/A')} | score {candidate.get('score', 0):.1f})")
+                        if existing >= needed:
+                            break
+
+                if fallback_added:
+                    print(f"[filter] Fallback added jobs for: {', '.join(fallback_added)}")
             
-            # If top_per_company mode, keep only highest scoring job from each company
+            # If top_per_company mode, keep up to N highest scoring jobs from each company
             if top_per_company and filtered_jobs:
-                company_best = {}
+                company_map: dict[str, list[dict[str, Any]]] = {}
                 for j in filtered_jobs:
                     # Get company name, fallback to source if not specified
-                    company = (j.get("company") or "").lower().strip()
-                    if not company or company == "not specified" or company == "not specified.":
-                        # Try to extract from source (e.g., "selenium:google" -> "google")
-                        source = j.get("source", "")
-                        if ":" in source:
-                            company = source.split(":")[-1].strip()
-                    
+                    company = _job_company_key(j)
                     if not company:
                         continue
                     
                     score = j.get("score", 0)
-                    if company not in company_best or score > company_best[company]["score"]:
-                        company_best[company] = j
-                
-                filtered_jobs = list(company_best.values())
-                # Sort by score descending
-                filtered_jobs.sort(key=lambda x: x.get("score", 0), reverse=True)
-                print(f"[filter] After top-per-company: {len(filtered_jobs)} jobs from {len(company_best)} companies")
+                    bucket = company_map.setdefault(company, [])
+                    bucket.append(j)
+
+                limited_jobs: list[dict[str, Any]] = []
+                for company, jobs in company_map.items():
+                    jobs.sort(key=lambda x: x.get("score", 0), reverse=True)
+                    limited_jobs.extend(jobs[:top_per_company_limit])
+
+                filtered_jobs = sorted(limited_jobs, key=lambda x: x.get("score", 0), reverse=True)
+                print(f"[filter] After top-per-company: {len(filtered_jobs)} jobs from {len(company_map)} companies (limit {top_per_company_limit})")
             
             if not filtered_jobs:
                 print(f"[filter] WARNING: No jobs above score threshold {score_threshold}. Lowering to 40.")

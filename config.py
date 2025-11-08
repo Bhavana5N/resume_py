@@ -51,6 +51,7 @@ def resolve_from_config(cfg: Dict[str, Any]) -> Dict[str, Any]:
         "fetch_limit": int((cfg or {}).get("fetch_limit", 200)),
         "min_score": float((cfg or {}).get("min_score", 60)),
         "top_per_company": bool((cfg or {}).get("top_per_company", False)),
+        "top_per_company_limit": int((cfg or {}).get("top_per_company_limit", 1) or 1),
         "parallel_workers": int((cfg or {}).get("parallel_workers", 5)),
         "mode": mode,
         "source": source,
