@@ -307,7 +307,7 @@ python agent_cli.py \
 from job_application_agent import JobApplicationAgent, AgentConfig
 
 config = AgentConfig(
-    resume_path="input/resume.txt",
+    resume_path="input/resume.yml",
     candidate_name="Your Name",
     target_roles=["senior software engineer"],
     target_companies=["uber", "lyft", "doordash"],

@@ -1,9 +1,9 @@
 {
-  "resume": "input/resume.txt",
+  "resume": "input/resume.yml",
   "top": 15,
   "country": "usa",
-  "fetch_limit": 10,
-  "min_score": 50,
+  "fetch_limit": 100,
+  "min_score": 40,
   "top_per_company": false,
   "top_per_company_limit": 1,
   "parallel_workers": 5,
@@ -174,7 +174,7 @@
     "max_jobs": 1,
     "headless": false,
     "wait_seconds": 25,
-    "resume_path": "input/resume.txt",
+  "resume_path": "input/resume.yml",
     "cover_letter_path": "",
     "profile": {
       "first_name": "Bhavana",
@@ -193,9 +193,9 @@
     "model": "gpt-4o-mini"
   },
   "auto_tailor_resume": true,
-  "tailor_threshold": 50,
+  "tailor_threshold": 40,
   "cover_letter": {
-    "resume": "input/resume.txt",
+    "resume": "input/resume.yml",
     "jd": "input/jd.txt",
     "name": "Bhavana Nare",
     "company": "",

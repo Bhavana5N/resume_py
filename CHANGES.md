@@ -113,7 +113,7 @@ All LLM-powered modules now use clean, focused adapter classes:
 ```bash
 export OPENAI_API_KEY=your_key
 python tailor.py \
-  --resume input/resume.txt \
+  --resume input/resume.yml \
   --jd input/jd.txt \
   --company "Google" \
   --role "ML Engineer" \

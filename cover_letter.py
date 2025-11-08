@@ -4,6 +4,8 @@ import re
 from pathlib import Path
 from datetime import datetime
 
+from resume_utils import load_resume_data
+
 from docx import Document
 try:
     from openai import OpenAI  # type: ignore
@@ -189,11 +191,6 @@ class CoverLetterBuilder:
         except Exception:
             return None
 
-
-def _read_text(path: Path) -> str:
-    return path.read_text(encoding="utf-8")
-
-
 def main() -> None:
     ap = argparse.ArgumentParser(description="Generate a tailored cover letter (prefers local LLM adapter when enabled).")
     ap.add_argument("--config", default="config.json", help="Path to config JSON with cover_letter block")
@@ -214,8 +211,12 @@ def main() -> None:
     if not resume_path or not jd_path:
         raise SystemExit("cover_letter.resume and cover_letter.jd must be set in config")
 
-    resume_text = _read_text(Path(resume_path))
-    jd_text = _read_text(Path(jd_path))
+    resume_path = Path(resume_path)
+    jd_path = Path(jd_path)
+    resume_text, resume_data = load_resume_data(resume_path)
+    jd_text = jd_path.read_text(encoding="utf-8")
+    if not name and resume_data:
+        name = (resume_data.get("basics") or {}).get("name") or ""
     builder = CoverLetterBuilder(resume_text, name)
 
     # Prefer LLM adapter when enabled and available

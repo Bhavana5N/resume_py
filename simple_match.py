@@ -15,6 +15,10 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import requests
 from rapidfuzz import fuzz
 
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+from resume_utils import load_resume_data
+
 # Try to load optional dependencies
 try:
     from dotenv import load_dotenv
@@ -46,9 +50,9 @@ class SimpleJobMatcher:
     
     def load_resume(self) -> str:
         """Load resume text"""
-        resume_path = self.config.get('resume', 'input/resume.txt')
-        with open(resume_path) as f:
-            return f.read()
+        resume_path = Path(self.config.get('resume', 'input/resume.yml'))
+        text, _ = load_resume_data(resume_path)
+        return text
     
     def scrape_jobs(self) -> List[Dict]:
         """Scrape jobs from configured companies"""

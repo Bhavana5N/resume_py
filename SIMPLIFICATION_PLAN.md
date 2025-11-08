@@ -53,7 +53,7 @@ response = client.chat.completions.create(
 
 ```yaml
 # config.yaml (NEW - Simple!)
-resume: input/resume.txt
+resume: input/resume.yml
 openai_key: ${OPENAI_API_KEY}
 
 job_search:
@@ -85,7 +85,7 @@ generation:
 **vs Current JSON:**
 ```json
 {
-  "resume": "input/resume.txt",
+  "resume": "input/resume.yml",
   "top": 15,
   "country": "usa",
   "fetch_limit": 10,
@@ -303,7 +303,7 @@ use_llm_parser = False  # Disable by default
 ### 2. Simplify Config
 Create `config.simple.yaml`:
 ```yaml
-resume: input/resume.txt
+resume: input/resume.yml
 companies: [uber, apple, meta, google, amazon, microsoft, netflix]
 min_score: 50
 fetch_limit: 10

@@ -19,6 +19,8 @@ from pathlib import Path
 from dataclasses import dataclass, asdict
 import logging
 
+from resume_utils import load_resume_data
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -130,6 +132,8 @@ class JobApplicationAgent:
             "applications_submitted": 0,
             "failures": 0
         }
+        self.base_resume_text: str = ""
+        self.resume_structured: Optional[Dict[str, Any]] = None
         
         # Initialize components
         self._init_components()
@@ -147,19 +151,30 @@ class JobApplicationAgent:
             from job_application_generator import JobApplicationGenerator
             from selenium_scraper import create_chrome_driver
             
+            resume_path = Path(self.config.resume_path).expanduser()
+            if not resume_path.exists():
+                raise FileNotFoundError(f"Resume file not found: {resume_path}")
+            self.base_resume_text, self.resume_structured = load_resume_data(resume_path)
+            if self.config.candidate_name == "Candidate" and self.resume_structured:
+                basics = self.resume_structured.get("basics") or {}
+                candidate = basics.get("name") or ""
+                if candidate:
+                    self.config.candidate_name = candidate
+            
             self.scraper = IntelligentJobScraper(
                 driver_factory=lambda: create_chrome_driver(headless=True),
                 verbose=self.config.verbose
             )
-            
+            self.job_desc_extractor = None
+            self.app_generator = None
+
             if self.config.openai_api_key:
                 self.job_desc_extractor = JobDescriptionExtractor(self.config.openai_api_key)
                 self.app_generator = JobApplicationGenerator(self.config.openai_api_key)
+                self.app_generator.set_resume(self.base_resume_text)
                 logger.info("LLM components initialized")
             else:
                 logger.warning("No OpenAI API key - LLM features disabled")
-                self.job_desc_extractor = None
-                self.app_generator = None
             
             # Optionally initialize autofill
             if self.config.auto_submit:
@@ -515,7 +530,7 @@ def create_agent_from_config(config_path: str) -> JobApplicationAgent:
         config_dict = json.load(f)
     
     agent_config = AgentConfig(
-        resume_path=config_dict.get("resume", "input/resume.txt"),
+        resume_path=config_dict.get("resume", "input/resume.yml"),
         candidate_name=config_dict.get("cover_letter", {}).get("name", "Candidate"),
         target_roles=config_dict.get("companies", ["software engineer"]),
         target_companies=config_dict.get("companies", []),

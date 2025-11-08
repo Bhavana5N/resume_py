@@ -18,6 +18,8 @@ if load_dotenv:
 
 from docx import Document
 
+from resume_utils import load_resume_data
+
 try:
     from llm_generate_resume import LLMResumer  # type: ignore
     _LLM_RESUMER_AVAILABLE = True
@@ -35,12 +37,9 @@ TECH_KEYWORDS = [
 
 _non_alnum = re.compile(r"[^a-z0-9+#.\-\s]")
 
-
 def read_text(path: Path) -> str:
-    with open(path, "r", encoding="utf-8") as f:
-        return f.read()
-
-
+    text, _ = load_resume_data(path)
+    return text
 def tokenize(text: str) -> list[str]:
     text = (text or "").lower()
     text = _non_alnum.sub(" ", text)

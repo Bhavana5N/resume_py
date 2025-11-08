@@ -104,15 +104,11 @@ except Exception:
     WorkdayAutofill = None  # type: ignore
     is_workday_url = lambda _: False  # type: ignore
 
+from resume_utils import load_resume_data
+
 _non_alnum = re.compile(r"[^a-z0-9+#.\-\s]")
 _html_strip_re = re.compile(r"<[^>]+>")
 _html_script_style_re = re.compile(r"(?is)<(script|style).*?>.*?</\\1>")
-
-
-def read_text(path: Path) -> str:
-    with open(path, "r", encoding="utf-8") as f:
-        return f.read()
-
 
 def tokenize_for_fuzz(text: str) -> str:
     text = (text or "").lower()
@@ -477,7 +473,7 @@ def main() -> None:
             stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             out_path = str(Path(here / out_dir / f"{prefix}_{stamp}.json"))
 
-    resume_text = read_text(resume_file)
+    resume_text, resume_structured = load_resume_data(resume_file)
     # If no explicit query provided, derive it from the resume content
     if not query:
         try:
@@ -590,7 +586,12 @@ def main() -> None:
             letters_dir = out_file.parent / "cover_letters"
             letters_dir.mkdir(parents=True, exist_ok=True)
             # Derive candidate name from resume first non-empty line
-            name_line = next((ln.strip() for ln in resume_text.splitlines() if ln.strip()), "Candidate")
+            candidate_name = ""
+            if resume_structured:
+                candidate_name = (resume_structured.get("basics") or {}).get("name", "") or ""
+            name_line = candidate_name.strip() or next(
+                (ln.strip() for ln in resume_text.splitlines() if ln.strip()), "Candidate"
+            )
             openai_cfg = resolved_cfg.get("openai") or {}
             use_openai = bool(openai_cfg.get("enabled"))
             openai_model = (openai_cfg.get("model") or "").strip()
@@ -848,7 +849,7 @@ def main() -> None:
                     if not company:
                         continue
                     
-                    score = j.get("score", 0)
+                score = j.get("score", 0)
                     bucket = company_map.setdefault(company, [])
                     bucket.append(j)
 

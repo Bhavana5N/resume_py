@@ -23,7 +23,7 @@ export OPENAI_API_KEY="your-key-here"
 ```
 
 ### 3. Add Your Resume
-Create `input/resume.txt` with your resume text.
+Create `input/resume.yml` with your structured resume (copy the default file to start).
 
 ### 4. Run It!
 ```bash
@@ -54,7 +54,7 @@ output/
 ### Simple Config (YAML)
 ```yaml
 # config.simple.yaml
-resume: input/resume.txt
+resume: input/resume.yml
 fetch_limit: 10
 min_score: 50
 

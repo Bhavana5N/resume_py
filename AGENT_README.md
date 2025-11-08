@@ -61,7 +61,7 @@ Create or edit `config.json`:
 
 ```json
 {
-  "resume": "input/resume.txt",
+  "resume": "input/resume.yml",
   "companies": ["uber", "apple", "meta", "openai"],
   "fetch_limit": 500,
   "top": 15,
@@ -334,7 +334,7 @@ $ python agent_cli.py --companies uber apple meta --max-jobs 3
 Job Application Agent
 ============================================================
 Configuration:
-  Resume: input/resume.txt
+  Resume: input/resume.yml
   Target roles: software engineer, ml engineer
   Target companies: uber, apple, meta
   Max applications: 3
@@ -412,7 +412,7 @@ from job_application_agent import JobApplicationAgent, AgentConfig
 
 # Configure agent
 config = AgentConfig(
-    resume_path="input/resume.txt",
+    resume_path="input/resume.yml",
     candidate_name="John Doe",
     target_roles=["software engineer", "backend engineer"],
     target_companies=["uber", "apple"],

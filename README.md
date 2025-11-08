@@ -56,7 +56,7 @@ Tailor your resume to a specific job description.
 **Basic usage (keyword-based)**:
 ```bash
 python tailor.py \
-  --resume input/resume.txt \
+  --resume input/resume.yml \
   --jd input/jd.txt \
   --name "Bhavana Nare" \
   --out output/tailored.docx
@@ -66,7 +66,7 @@ python tailor.py \
 ```bash
 export OPENAI_API_KEY=your_key
 python tailor.py \
-  --resume input/resume.txt \
+  --resume input/resume.yml \
   --jd input/jd.txt \
   --name "Bhavana Nare" \
   --company "Target Company" \
@@ -88,7 +88,7 @@ Edit the `cover_letter` block in `config.json`:
 ```json
 {
   "cover_letter": {
-    "resume": "input/resume.txt",
+    "resume": "input/resume.yml",
     "jd": "input/jd.txt",
     "name": "Bhavana Nare",
     "company": "Target Company",
@@ -130,7 +130,7 @@ Reads `resume_builder` block from `config.json` and generates an enhanced resume
 
 ```json
 {
-  "resume": "input/resume.txt",
+  "resume": "input/resume.yml",
   "top": 15,
   "country": "usa",
   "fetch_limit": 500,
@@ -162,7 +162,7 @@ Reads `resume_builder` block from `config.json` and generates an enhanced resume
     "prefix": "matches_daily"
   },
   "cover_letter": {
-    "resume": "input/resume.txt",
+    "resume": "input/resume.yml",
     "jd": "input/jd.txt",
     "name": "Your Name",
     "company": "",

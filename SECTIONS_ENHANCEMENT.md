@@ -199,7 +199,7 @@ FUNCTIONAL EXPERTISE complements Technical Skills:
 
 ## Example: Your Resume
 
-Based on your background (`input/resume.txt`), the LLM will now generate:
+Based on your background (`input/resume.yml`), the LLM will now generate:
 
 ### TECHNICAL SKILLS
 ```

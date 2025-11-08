@@ -31,23 +31,33 @@ export OPENAI_API_KEY=your_key_here
 
 ## 3. Prepare Your Resume
 
-Create `input/resume.txt` with your resume content (plain text):
+Create `input/resume.yml` using the structured template. You can copy the existing `input/resume.yml` and customize it.  
+Example (trimmed for brevity):
 
+```yaml
+basics:
+  name: Your Name
+  email: you@example.com
+  phone: "+1-555-555-5555"
+  summary:
+    - Experienced software engineer specializing in cloud and ML platforms.
+    - Built production-grade APIs, data pipelines, and deployment automation.
+
+skills:
+  - name: Programming Languages
+    keywords: ["Python", "JavaScript", "Go"]
+
+work:
+  - company: Example Corp
+    position: Senior Software Engineer
+    startDate: "Jan 2021"
+    endDate: "Present"
+    highlights:
+      - Led microservices migration to Kubernetes, improving reliability.
+      - Built ML inference pipeline reducing latency by 40%.
 ```
-Your Name
-City, Country | Phone | Email | LinkedIn | GitHub
 
-PROFESSIONAL SUMMARY
-Your summary here...
-
-EXPERIENCE
-Company Name | Role | Dates
-- Achievement 1
-- Achievement 2
-
-SKILLS
-Python, JavaScript, AWS, Docker, etc.
-```
+All automation now consumes this YAML to build the base resume before tailoring.
 
 ## 4. Choose Your Workflow
 
@@ -70,14 +80,14 @@ Create `input/jd.txt` with the job description, then:
 ```bash
 # Keyword-based (no API key needed)
 python tailor.py \
-  --resume input/resume.txt \
+  --resume input/resume.yml \
   --jd input/jd.txt \
   --name "Your Name" \
   --out output/tailored.docx
 
 # LLM-based (recommended, requires OpenAI key)
 python tailor.py \
-  --resume input/resume.txt \
+  --resume input/resume.yml \
   --jd input/jd.txt \
   --name "Your Name" \
   --company "Google" \
@@ -92,7 +102,7 @@ python tailor.py \
 # Update config.json with cover_letter block:
 # {
 #   "cover_letter": {
-#     "resume": "input/resume.txt",
+#     "resume": "input/resume.yml",
 #     "jd": "input/jd.txt",
 #     "name": "Your Name",
 #     "company": "Google",
@@ -114,7 +124,7 @@ Edit `config.json`:
 
 ```json
 {
-  "resume": "input/resume.txt",
+  "resume": "input/resume.yml",
   "top": 15,
   "openai": {
     "enabled": true,
@@ -176,7 +186,7 @@ export OPENAI_API_KEY=your_key
 ```bash
 # Create input directory and add resume
 mkdir -p input
-echo "Your resume text" > input/resume.txt
+# Edit input/resume.yml to match your background (see existing file for guidance)
 ```
 
 ## What's Next?

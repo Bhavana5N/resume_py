@@ -87,7 +87,7 @@ Examples:
     
     # Build agent configuration
     agent_config = AgentConfig(
-        resume_path=config_dict.get("resume", "input/resume.txt"),
+        resume_path=config_dict.get("resume", "input/resume.yml"),
         candidate_name=config_dict.get("cover_letter", {}).get("name", "Candidate"),
         target_roles=args.roles or config_dict.get("companies", ["software engineer"]),
         target_companies=args.companies or config_dict.get("companies", []),

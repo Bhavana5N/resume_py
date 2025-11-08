@@ -4,7 +4,6 @@ Integrates job parser, resume generator, and cover letter generator.
 """
 import os
 import textwrap
-from pathlib import Path
 from typing import Dict, Any
 from concurrent.futures import ThreadPoolExecutor
 
@@ -17,6 +16,8 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
 from dotenv import load_dotenv
+
+from enhanced_prompts import ENHANCED_RESUME_PROMPT, ENHANCED_COVER_LETTER_PROMPT
 
 load_dotenv()
 
@@ -32,10 +33,11 @@ class JobApplicationGenerator:
         if not api_key:
             raise ValueError("OpenAI API key required")
         
+        model_name = os.getenv("OPENAI_RESUME_MODEL", "gpt-4o")
         self.llm = ChatOpenAI(
-            model="gpt-4o-mini",
+            model=model_name,
             api_key=api_key,
-            temperature=0.4
+            temperature=0.4,
         )
         self.resume_text = None
 
@@ -47,6 +49,27 @@ class JobApplicationGenerator:
     def set_resume(self, resume_text: str) -> None:
         """Set the resume text to be used for generation."""
         self.resume_text = resume_text
+
+    @staticmethod
+    def _compose_job_context(job_description: str, job_summary: str | None) -> str:
+        """Combine summary and description while keeping size manageable."""
+        description = (job_description or "").strip()
+        summary = (job_summary or "").strip() if job_summary else ""
+
+        context_parts = []
+        if summary:
+            context_parts.append("Job Summary:")
+            context_parts.append(summary)
+        if description:
+            if summary:
+                context_parts.append("\nFull Job Description:")
+            context_parts.append(description)
+
+        context = "\n".join(context_parts).strip() or "No job description provided."
+        max_chars = 8000
+        if len(context) > max_chars:
+            context = context[:max_chars] + "\n\n[Content truncated for brevity]"
+        return context
 
     def summarize_job_description(self, job_description: str) -> str:
         """
@@ -77,99 +100,58 @@ class JobApplicationGenerator:
         self,
         job_description: str,
         company: str,
-        role: str
+        role: str,
+        job_summary: str | None = None,
     ) -> str:
         """
         Generate ATS-optimized resume tailored to job description.
         Based on llm_generate_resume_from_job functionality.
         """
-        # First summarize the job description
-        jd_summary = self.summarize_job_description(job_description)
-        
-        template = self._preprocess_template("""
-        You are an expert resume writer specializing in ATS optimization.
-        
-        Task: Rewrite the resume below to align with the job requirements while maintaining truthfulness.
-        
-        **Company**: {company}
-        **Role**: {role}
-        
-        **Job Requirements Summary**:
-        {job_summary}
-        
-        **Current Resume**:
-        {resume}
-        
-        **Instructions**:
-        1. Highlight experiences and skills that match the job requirements
-        2. Use keywords from the job description naturally
-        3. Quantify achievements where possible
-        4. Reorder or emphasize relevant sections
-        5. Keep the same factual information - DO NOT fabricate
-        6. Maintain professional formatting
-        7. Optimize for ATS scanning
-        
-        Output a well-structured, ATS-friendly resume in plain text format.
-        """)
-        
+        if not self.resume_text:
+            raise ValueError("Base resume text must be set before generating outputs.")
+
+        summary = job_summary or self.summarize_job_description(job_description)
+        job_context = self._compose_job_context(job_description, summary)
+
+        template = self._preprocess_template(ENHANCED_RESUME_PROMPT)
+
         prompt = ChatPromptTemplate.from_template(template)
         chain = prompt | self.llm | StrOutputParser()
         
         return chain.invoke({
-            "company": company,
-            "role": role,
-            "job_summary": jd_summary,
-            "resume": self.resume_text
+            "company_name": company,
+            "job_title": role,
+            "job_description": job_context,
+            "resume_text": self.resume_text,
         })
 
     def generate_cover_letter(
         self,
         job_description: str,
         company: str,
-        role: str
+        role: str,
+        job_summary: str | None = None,
     ) -> str:
         """
         Generate compelling cover letter based on job description and resume.
         Based on llm_generate_cover_letter_from_job functionality.
         """
-        # First summarize the job description
-        jd_summary = self.summarize_job_description(job_description)
-        
-        template = self._preprocess_template("""
-        You are an expert cover letter writer.
-        
-        Write a professional, compelling cover letter for this job application.
-        
-        **Company**: {company}
-        **Role**: {role}
-        
-        **Job Requirements**:
-        {job_summary}
-        
-        **Candidate's Resume**:
-        {resume}
-        
-        **Instructions**:
-        1. Write 3-4 concise paragraphs
-        2. No greeting or signature (just body)
-        3. Open with why you're excited about this specific role and company
-        4. Highlight 2-3 relevant achievements from the resume that match job requirements
-        5. Show understanding of the company's needs and how you can address them
-        6. Close with enthusiasm and call to action
-        7. Professional yet conversational tone
-        8. Use specific examples, avoid generic statements
-        
-        Output only the cover letter body (no "Dear..." or "Sincerely").
-        """)
-        
+        if not self.resume_text:
+            raise ValueError("Base resume text must be set before generating outputs.")
+
+        summary = job_summary or self.summarize_job_description(job_description)
+        job_context = self._compose_job_context(job_description, summary)
+
+        template = self._preprocess_template(ENHANCED_COVER_LETTER_PROMPT)
+
         prompt = ChatPromptTemplate.from_template(template)
         chain = prompt | self.llm | StrOutputParser()
         
         return chain.invoke({
-            "company": company,
-            "role": role,
-            "job_summary": jd_summary,
-            "resume": self.resume_text
+            "company_name": company,
+            "job_title": role,
+            "job_description": job_context,
+            "resume_text": self.resume_text,
         })
 
     def generate_application_package(
@@ -201,13 +183,15 @@ class JobApplicationGenerator:
                     self.generate_tailored_resume,
                     job_description,
                     company,
-                    role
+                    role,
+                    job_summary,
                 )
                 cover_letter_future = executor.submit(
                     self.generate_cover_letter,
                     job_description,
                     company,
-                    role
+                    role,
+                    job_summary,
                 )
                 
                 return {
@@ -218,8 +202,12 @@ class JobApplicationGenerator:
         else:
             # Sequential generation
             return {
-                "resume": self.generate_tailored_resume(job_description, company, role),
-                "cover_letter": self.generate_cover_letter(job_description, company, role),
+                "resume": self.generate_tailored_resume(
+                    job_description, company, role, job_summary
+                ),
+                "cover_letter": self.generate_cover_letter(
+                    job_description, company, role, job_summary
+                ),
                 "job_summary": job_summary
             }
 

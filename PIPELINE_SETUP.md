@@ -135,7 +135,7 @@ Edit `config.json` in your repository:
 
 ```json
 {
-  "resume": "input/resume.txt",
+  "resume": "input/resume.yml",
   "companies": ["uber", "apple", "meta", "openai"],
   "fetch_limit": 500,
   "top": 15,

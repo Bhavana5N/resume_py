@@ -77,7 +77,7 @@ BeautifulSoup → Fallback to minimal
 ```yaml
 # Before (JSON - 196 lines)
 {
-  "resume": "input/resume.txt",
+  "resume": "input/resume.yml",
   "top": 15,
   "country": "usa",
   "fetch_limit": 100,
@@ -96,7 +96,7 @@ BeautifulSoup → Fallback to minimal
 }
 
 # After (YAML - 40 lines)
-resume: input/resume.txt
+resume: input/resume.yml
 fetch_limit: 10
 min_score: 50
 
@@ -208,7 +208,7 @@ python match.py --config config.json
 ### 1. Start with Simple Config
 ```yaml
 # Minimal working config
-resume: input/resume.txt
+resume: input/resume.yml
 min_score: 50
 fetch_limit: 10
 companies: [uber, apple, meta, google, amazon, microsoft, netflix]
