@@ -3,6 +3,8 @@ import requests
 from typing import Any
 from urllib.parse import urljoin, urlparse
 
+import os
+
 try:
     from selenium import webdriver
     from selenium.webdriver.chrome.options import Options as ChromeOptions
@@ -14,6 +16,13 @@ try:
     SELENIUM_AVAILABLE = True
 except Exception:
     SELENIUM_AVAILABLE = False
+
+try:
+    from llm_job_list_extractor import LLMJobListExtractor
+    LLM_JOB_LIST_EXTRACTOR_AVAILABLE = True
+except Exception:
+    LLM_JOB_LIST_EXTRACTOR_AVAILABLE = False
+    LLMJobListExtractor = None
 
 
 def create_chrome_driver(headless: bool = True, window_size: str = "1920,1080") -> Any:
@@ -363,6 +372,33 @@ def fetch_selenium_sites(sites: list[Any], fetch_limit: int) -> list[dict[str, A
                     continue
             
             print(f"[selenium-debug] Processed {processed_count} items from {len(items)} containers, extracted {len(results)} jobs with URLs")
+            
+            # If we didn't get enough jobs with URLs, try LLM extraction as fallback
+            if len(results) < 3 and LLM_JOB_LIST_EXTRACTOR_AVAILABLE:
+                try:
+                    openai_key = os.getenv("OPENAI_API_KEY")
+                    if openai_key:
+                        print(f"[selenium-debug] ⚠️ Only found {len(results)} jobs with URLs, trying LLM extraction...")
+                        page_source = driver.page_source
+                        llm_extractor = LLMJobListExtractor(openai_key)
+                        llm_jobs = llm_extractor.extract_jobs_from_html(
+                            page_source,
+                            url,
+                            site.get("company"),
+                            max_jobs=20
+                        )
+                        
+                        # Add LLM-extracted jobs that we don't already have
+                        existing_urls = {r.get("url") for r in results}
+                        for llm_job in llm_jobs:
+                            if llm_job.get("url") and llm_job.get("url") not in existing_urls:
+                                results.append(llm_job)
+                                existing_urls.add(llm_job.get("url"))
+                                print(f"  [selenium-debug] ✅ LLM extracted: {llm_job.get('title', 'N/A')[:50]} -> {llm_job.get('url', 'N/A')[:80]}")
+                        
+                        print(f"[selenium-debug] LLM extraction added {len(llm_jobs)} jobs, total now: {len(results)}")
+                except Exception as e:
+                    print(f"[selenium-debug] LLM extraction failed: {type(e).__name__}: {e}")
     finally:
         try:
             driver.quit()
