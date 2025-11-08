@@ -673,15 +673,49 @@ def main() -> None:
             
             # Filter jobs by score threshold FIRST to avoid wasting time
             score_threshold = float(resolved_cfg.get("min_score", 60))
-            print(f"[filter] Filtering jobs with score >= {score_threshold}")
+            target_roles = resolved_cfg.get("target_roles", [])
             
+            print(f"[filter] Filtering jobs with score >= {score_threshold}")
+            if target_roles:
+                print(f"[filter] Target roles: {', '.join(target_roles)}")
+            
+            # Filter by score
             filtered_jobs = [j for j in top[:100] if j.get("score", 0) >= score_threshold]
+            
+            # Additionally filter by target roles if specified
+            if target_roles and filtered_jobs:
+                role_matched_jobs = []
+                for j in filtered_jobs:
+                    job_title = (j.get("title") or "").lower()
+                    # Check if job title contains any of the target roles
+                    for target_role in target_roles:
+                        if target_role.lower() in job_title:
+                            role_matched_jobs.append(j)
+                            break
+                
+                if role_matched_jobs:
+                    print(f"[filter] {len(role_matched_jobs)} jobs match target roles (out of {len(filtered_jobs)} above score threshold)")
+                    filtered_jobs = role_matched_jobs
+                else:
+                    print(f"[filter] WARNING: No jobs match target roles. Processing all {len(filtered_jobs)} jobs above score threshold.")
             
             if not filtered_jobs:
                 print(f"[filter] WARNING: No jobs above score threshold {score_threshold}. Lowering to 40.")
                 filtered_jobs = [j for j in top[:100] if j.get("score", 0) >= 40]
+                
+                # Try role filtering again with lowered score threshold
+                if target_roles and filtered_jobs:
+                    role_matched_jobs = []
+                    for j in filtered_jobs:
+                        job_title = (j.get("title") or "").lower()
+                        for target_role in target_roles:
+                            if target_role.lower() in job_title:
+                                role_matched_jobs.append(j)
+                                break
+                    if role_matched_jobs:
+                        filtered_jobs = role_matched_jobs
             
-            print(f"[filter] Processing {len(filtered_jobs)} jobs above threshold (out of {len(top[:100])} total)")
+            print(f"[filter] Processing {len(filtered_jobs)} jobs (out of {len(top[:100])} total)")
             
             for idx, j in enumerate(filtered_jobs):
                 score = j.get("score", 0)
