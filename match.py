@@ -675,12 +675,15 @@ def main() -> None:
             score_threshold = float(resolved_cfg.get("min_score", 60))
             target_roles = resolved_cfg.get("target_roles", [])
             target_locations = resolved_cfg.get("target_locations", [])
+            top_per_company = bool(resolved_cfg.get("top_per_company", False))
             
             print(f"[filter] Filtering jobs with score >= {score_threshold}")
             if target_roles:
                 print(f"[filter] Target roles: {', '.join(target_roles)}")
             if target_locations:
                 print(f"[filter] Target locations: {', '.join(target_locations[:5])}{'...' if len(target_locations) > 5 else ''}")
+            if top_per_company:
+                print(f"[filter] Top per company mode: Will select only highest scoring job from each company")
             
             # Filter by score
             filtered_jobs = [j for j in top[:100] if j.get("score", 0) >= score_threshold]
@@ -719,6 +722,22 @@ def main() -> None:
                 else:
                     print(f"[filter] WARNING: No jobs match target locations. Processing all {len(filtered_jobs)} jobs.")
             
+            # If top_per_company mode, keep only highest scoring job from each company
+            if top_per_company and filtered_jobs:
+                company_best = {}
+                for j in filtered_jobs:
+                    company = (j.get("company") or "").lower().strip()
+                    if not company:
+                        continue
+                    score = j.get("score", 0)
+                    if company not in company_best or score > company_best[company]["score"]:
+                        company_best[company] = j
+                
+                filtered_jobs = list(company_best.values())
+                # Sort by score descending
+                filtered_jobs.sort(key=lambda x: x.get("score", 0), reverse=True)
+                print(f"[filter] Selected top job from {len(company_best)} companies")
+            
             if not filtered_jobs:
                 print(f"[filter] WARNING: No jobs after filtering. Lowering score to 40.")
                 filtered_jobs = [j for j in top[:100] if j.get("score", 0) >= 40]
@@ -746,6 +765,19 @@ def main() -> None:
                                 break
                     if location_matched_jobs:
                         filtered_jobs = location_matched_jobs
+                
+                # Apply top per company again if enabled
+                if top_per_company and filtered_jobs:
+                    company_best = {}
+                    for j in filtered_jobs:
+                        company = (j.get("company") or "").lower().strip()
+                        if not company:
+                            continue
+                        score = j.get("score", 0)
+                        if company not in company_best or score > company_best[company]["score"]:
+                            company_best[company] = j
+                    filtered_jobs = list(company_best.values())
+                    filtered_jobs.sort(key=lambda x: x.get("score", 0), reverse=True)
             
             print(f"[filter] Processing {len(filtered_jobs)} jobs (out of {len(top[:100])} total)")
             

@@ -4,6 +4,7 @@
   "country": "usa",
   "fetch_limit": 50,
   "min_score": 65,
+  "top_per_company": true,
   "run_both": false,
   "selenium_only": true,
   "save_fetched": true,
