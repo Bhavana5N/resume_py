@@ -415,6 +415,13 @@ class WordDocumentGenerator:
             if not current_section and not line_stripped:
                 continue
             
+            # Skip horizontal separator lines (---, ===, etc.)
+            if line_stripped and all(c in '-=_*~' for c in line_stripped):
+                continue
+            
+            # Remove markdown bold syntax (**text**)
+            line_stripped = re.sub(r'\*\*(.*?)\*\*', r'\1', line_stripped)
+            
             # Skip lines matching optimization text patterns
             if any(re.search(pattern, line_lower) for pattern in skip_patterns):
                 continue
