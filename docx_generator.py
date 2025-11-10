@@ -19,6 +19,19 @@ except ImportError:
     LLM_PARSER_AVAILABLE = False
 
 
+def _clean_markdown(text: str) -> str:
+    """Remove markdown formatting (bold, italic, etc.) from text."""
+    if not text:
+        return text
+    # Remove bold (**text** or __text__)
+    text = re.sub(r'\*\*(.*?)\*\*', r'\1', text)
+    text = re.sub(r'__(.*?)__', r'\1', text)
+    # Remove italic (*text* or _text_) - be careful not to remove list bullets
+    text = re.sub(r'(?<!\*)\*(?!\*)([^\*]+)\*(?!\*)', r'\1', text)
+    text = re.sub(r'(?<!_)_(?!_)([^_]+)_(?!_)', r'\1', text)
+    return text
+
+
 class WordDocumentGenerator:
     """Generate professional Word documents for resumes and cover letters"""
     
@@ -94,16 +107,7 @@ class WordDocumentGenerator:
             # Add spacing
             doc.add_paragraph()
             
-            # Target Position (only if both are provided and not "Not specified")
-            if (job_title and company_name and 
-                job_title.lower() not in ("not specified", "not specified.") and
-                company_name.lower() not in ("not specified", "not specified.")):
-                target_para = doc.add_paragraph()
-                target_para.add_run('Target Position: ').bold = True
-                target_para.add_run(f'{job_title} at {company_name}')
-                target_para.paragraph_format.space_after = Pt(12)
-            
-            # Professional Summary (10 bullet points)
+            # Professional Summary (15 bullet points)
             summary_added = False
             for key in ['summary', 'professional_summary', 'objective']:
                 if key in sections_dict and sections_dict[key].strip():
@@ -125,7 +129,7 @@ class WordDocumentGenerator:
                         if clean_line and len(clean_line) > 20:
                             self._add_bullet_point(doc, clean_line)
                             bullet_count += 1
-                            if bullet_count >= 10:
+                            if bullet_count >= 15:
                                 break
                     
                     if bullet_count > 0:
@@ -371,6 +375,8 @@ class WordDocumentGenerator:
     
     def _add_bullet_point(self, doc, text: str):
         """Add a formatted bullet point"""
+        # Clean markdown formatting
+        text = _clean_markdown(text)
         para = doc.add_paragraph(text, style='List Bullet')
         para.paragraph_format.space_after = Pt(4)
         para.paragraph_format.left_indent = Inches(0.25)
@@ -403,9 +409,13 @@ class WordDocumentGenerator:
         skip_patterns = [
             r'specifically optimized for',
             r'highlighting.*relevant skills',
-            r'this resume is.*optimized',
+            r'this resume (is|has been).*optimized',
+            r'this resume (is|has been).*tailored',
+            r'this resume (is|has been).*designed',
             r'tailored.*for.*position',
             r'optimized for.*position at',
+            r'formatted to align with',
+            r'designed to showcase',
         ]
         
         for line in lines:

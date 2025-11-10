@@ -32,6 +32,19 @@ def _normalize_meta_field(value: str | None) -> str:
     return cleaned
 
 
+def _clean_markdown(text: str) -> str:
+    """Remove markdown formatting (bold, italic, etc.) from text."""
+    if not text:
+        return text
+    # Remove bold (**text** or __text__)
+    text = re.sub(r'\*\*(.*?)\*\*', r'\1', text)
+    text = re.sub(r'__(.*?)__', r'\1', text)
+    # Remove italic (*text* or _text_) - be careful not to remove list bullets
+    text = re.sub(r'(?<!\*)\*(?!\*)([^\*]+)\*(?!\*)', r'\1', text)
+    text = re.sub(r'(?<!_)_(?!_)([^_]+)_(?!_)', r'\1', text)
+    return text
+
+
 class PDFGenerator:
     """Generate professional PDF documents for resumes and cover letters"""
     
@@ -202,17 +215,7 @@ r45        Generate a professional 3-page resume PDF
                 contact_text = sections['contact'].replace('\n', ' | ')
                 story.append(Paragraph(contact_text, self.styles['ContactInfo']))
             
-            # Target position (only if both are provided and not "Not specified")
-            job_title_normalized = _normalize_meta_field(job_title)
-            company_name_normalized = _normalize_meta_field(company_name)
-            if job_title_normalized and company_name_normalized:
-                story.append(Paragraph(
-                    f"<b>Target Position:</b> {job_title_normalized} at {company_name_normalized}",
-                    self.styles['Normal']
-                ))
-                story.append(Spacer(1, 0.08*inch))
-            
-            # Professional Summary (10 bullet points)
+            # Professional Summary (15 bullet points)
             summary_added = False
             for key in ['summary', 'professional_summary', 'objective']:
                 if key in sections and sections[key].strip():
@@ -231,13 +234,16 @@ r45        Generate a professional 3-page resume PDF
                         # Preserve exact text - only remove leading bullet char if present
                         clean_line = line.lstrip('•-*►▪→◆ ').strip()
                         
+                        # Remove markdown formatting
+                        clean_line = _clean_markdown(clean_line)
+                        
                         # Preserve all content exactly - don't filter by length
                         if clean_line:
                             # Escape XML/HTML special chars for ReportLab but preserve text exactly
                             clean_escaped = clean_line.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
                             story.append(Paragraph(f"• {clean_escaped}", self.styles['BulletPoint']))
                             bullet_count += 1
-                            if bullet_count >= 10:
+                            if bullet_count >= 15:
                                 break
                     
                     if bullet_count > 0:
@@ -308,6 +314,8 @@ r45        Generate a professional 3-page resume PDF
                                 # Preserve the exact bullet text without modification
                                 bullet_text = bullet.strip()
                                 if bullet_text:
+                                    # Remove markdown formatting
+                                    bullet_text = _clean_markdown(bullet_text)
                                     # Escape XML/HTML special chars for ReportLab but preserve text exactly
                                     # ReportLab Paragraph uses XML-like syntax, so we need to escape &, <, >
                                     bullet_escaped = bullet_text.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
@@ -319,6 +327,7 @@ r45        Generate a professional 3-page resume PDF
                         # Fallback: just render the text with basic formatting
                         exp_lines = [l.strip() for l in exp_text.split('\n') if l.strip()]
                         for line in exp_lines[:20]:  # Limit to prevent overflow
+                            line = _clean_markdown(line)
                             if line.startswith('•') or line.startswith('-'):
                                 story.append(Paragraph(line, self.styles['BulletPoint']))
                             else:
@@ -334,6 +343,7 @@ r45        Generate a professional 3-page resume PDF
                     edu_text = sections[key]
                     edu_lines = [l.strip() for l in edu_text.split('\n') if l.strip()]
                     for line in edu_lines:
+                        line = _clean_markdown(line)
                         if line.startswith('•') or line.startswith('-'):
                             story.append(Paragraph(line, self.styles['BulletPoint']))
                         else:
@@ -352,15 +362,19 @@ r45        Generate a professional 3-page resume PDF
                         # Parse skills into bullet points
                         skills_lines = [l.strip() for l in skills_text.split('\n') if l.strip()]
                         for line in skills_lines:
+                            line = _clean_markdown(line)
                             # Check if line already has bullet or is a category
                             if line.startswith('•') or line.startswith('-') or line.startswith('*'):
-                                story.append(Paragraph(line, self.styles['BulletPoint']))
+                                clean_text = line.lstrip('•-*►▪→◆ ').strip()
+                                if clean_text:  # Only add if there's actual content
+                                    story.append(Paragraph(line, self.styles['BulletPoint']))
                             elif ':' in line and len(line) < 200:
                                 # Category line like "Programming Languages: Python, C++"
                                 story.append(Paragraph(f"• {line}", self.styles['BulletPoint']))
                             else:
                                 # Plain text - add bullet
-                                story.append(Paragraph(f"• {line}", self.styles['BulletPoint']))
+                                if line:  # Only add if not empty
+                                    story.append(Paragraph(f"• {line}", self.styles['BulletPoint']))
                         story.append(Spacer(1, 0.06*inch))
                     break
             
@@ -373,15 +387,19 @@ r45        Generate a professional 3-page resume PDF
                         # Parse expertise into bullet points
                         expertise_lines = [l.strip() for l in expertise_text.split('\n') if l.strip()]
                         for line in expertise_lines:
+                            line = _clean_markdown(line)
                             # Check if line already has bullet or is a category
                             if line.startswith('•') or line.startswith('-') or line.startswith('*'):
-                                story.append(Paragraph(line, self.styles['BulletPoint']))
+                                clean_text = line.lstrip('•-*►▪→◆ ').strip()
+                                if clean_text:  # Only add if there's actual content
+                                    story.append(Paragraph(line, self.styles['BulletPoint']))
                             elif ':' in line and len(line) < 200:
                                 # Category line like "Machine Learning & AI: ML pipeline development"
                                 story.append(Paragraph(f"• {line}", self.styles['BulletPoint']))
                             else:
                                 # Plain text - add bullet
-                                story.append(Paragraph(f"• {line}", self.styles['BulletPoint']))
+                                if line:  # Only add if not empty
+                                    story.append(Paragraph(f"• {line}", self.styles['BulletPoint']))
                         story.append(Spacer(1, 0.06*inch))
                     break
             
@@ -588,9 +606,13 @@ r45        Generate a professional 3-page resume PDF
         skip_patterns = [
             r'specifically optimized for',
             r'highlighting.*relevant skills',
-            r'this resume is.*optimized',
+            r'this resume (is|has been).*optimized',
+            r'this resume (is|has been).*tailored',
+            r'this resume (is|has been).*designed',
             r'tailored.*for.*position',
             r'optimized for.*position at',
+            r'formatted to align with',
+            r'designed to showcase',
         ]
         
         for line in lines:

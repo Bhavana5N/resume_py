@@ -26,26 +26,38 @@ Job Description: {job_description}
    - Candidate's full name
    - Contact: Email | Phone | GitHub | LinkedIn (all on one line)
 
-2. **PROFESSIONAL SUMMARY - MUST HAVE EXACTLY 10 BULLET POINTS:**
+2. **PROFESSIONAL SUMMARY - MUST HAVE EXACTLY 15 BULLET POINTS:**
    Section header: "PROFESSIONAL SUMMARY"
    
+   **CRITICAL: MAXIMIZE TECHNICAL TERMS AND KEYWORDS**
+   - Every bullet MUST include at least 2-3 technical terms from the job description
+   - Use EXACT technology names (e.g., "Python", "AWS", "Kubernetes", "TensorFlow", "React", "PostgreSQL")
+   - Include frameworks, tools, and methodologies from the JD (e.g., "CI/CD", "Docker", "Terraform", "GraphQL")
+   
    **PRIORITIZE JOB-SPECIFIC CONTENT:**
-   - Bullet 1: Years of experience + PRIMARY expertise area from job description (use exact keywords from JD)
-   - Bullet 2: Achievement using KEY TECHNOLOGY from job description (e.g., if JD mentions "AWS", highlight AWS achievements)
-   - Bullet 3: Achievement using KEY TECHNOLOGY from job description (e.g., if JD mentions "Python", highlight Python achievements)
-   - Bullet 4: Achievement matching PRIMARY RESPONSIBILITY from job description (use similar language/phrasing)
-   - Bullet 5: Achievement matching SECONDARY RESPONSIBILITY from job description
-   - Bullet 6: Leadership/team collaboration achievement (if mentioned in JD)
-   - Bullet 7: System architecture/scalability achievement (if mentioned in JD)
-   - Bullet 8: Process improvement/efficiency gain matching JD requirements
-   - Bullet 9: Cross-functional collaboration matching JD requirements
-   - Bullet 10: Domain expertise/industry knowledge matching JD requirements
+   - Bullet 1: Years of experience + PRIMARY expertise area with 3-4 key technologies from JD
+   - Bullet 2: Achievement using KEY TECHNOLOGY #1 from job description with quantifiable impact
+   - Bullet 3: Achievement using KEY TECHNOLOGY #2 from job description with quantifiable impact
+   - Bullet 4: Achievement using KEY TECHNOLOGY #3 from job description with quantifiable impact
+   - Bullet 5: Achievement matching PRIMARY RESPONSIBILITY from JD with technical stack mentioned
+   - Bullet 6: Achievement matching SECONDARY RESPONSIBILITY from JD with tools/frameworks
+   - Bullet 7: Leadership/team collaboration achievement with technologies used
+   - Bullet 8: System architecture/scalability achievement with specific tech stack
+   - Bullet 9: Process improvement/efficiency gain with automation tools mentioned
+   - Bullet 10: Cross-functional collaboration with platforms/tools used
+   - Bullet 11: Cloud infrastructure achievement (if in JD) with specific services (AWS/Azure/GCP)
+   - Bullet 12: Data/ML achievement (if in JD) with specific frameworks/libraries
+   - Bullet 13: Security/compliance achievement (if in JD) with tools/practices
+   - Bullet 14: Performance optimization achievement with metrics and technologies
+   - Bullet 15: Domain expertise/industry knowledge with relevant technical certifications or publications
    
    **Each bullet MUST:**
-   - Start with a strong action verb (Led, Architected, Developed, Optimized, Implemented)
+   - Start with a strong action verb (Led, Architected, Developed, Optimized, Implemented, Engineered)
+   - Include 2-3 specific technologies, frameworks, or tools (e.g., "Python, TensorFlow, AWS SageMaker")
    - Include specific numbers, percentages, or measurable impact
    - Be 1-2 lines maximum
-   - Use KEYWORDS and PHRASES directly from the job description
+   - Use KEYWORDS and TECHNICAL TERMS directly from the job description
+   - Pack as many relevant technical skills as possible while maintaining readability
    - Prioritize achievements that match job requirements over generic accomplishments
 
 3. **WORK EXPERIENCE Section:**
@@ -241,7 +253,7 @@ PUBLICATIONS
 - NO generic placeholders like "Company" or "Position" - ALWAYS use REAL names from candidate's background
 - COMPANY NAMES ARE MANDATORY - every position MUST include the company name after the position title
 - If position title contains "|", format as: "Position Part 1 | Position Part 2 | Company Name" (company is LAST)
-- EXACTLY 10 bullet points in Professional Summary
+- EXACTLY 15 bullet points in Professional Summary (each with 2-3 technical terms)
 - Include ALL 5 work positions with company names
 - EVERY achievement must include numbers/metrics
 - Focus on relevance to the target job
@@ -295,7 +307,7 @@ End with "Sincerely," (closing signature will be added automatically).
 """
 
 PROFESSIONAL_SUMMARY_PROMPT = """
-Generate a compelling professional summary with EXACTLY 10 bullet points for a {job_title} position at {company_name}.
+Generate a compelling professional summary with EXACTLY 15 bullet points for a {job_title} position at {company_name}.
 
 **Job Description:**
 {job_description}
@@ -303,23 +315,39 @@ Generate a compelling professional summary with EXACTLY 10 bullet points for a {
 **Candidate Background:**
 {resume_text}
 
+**CRITICAL: MAXIMIZE TECHNICAL KEYWORDS**
+- Every bullet MUST include 2-3 specific technical terms, tools, or frameworks
+- Use EXACT technology names from the job description (e.g., Python, AWS, Kubernetes, TensorFlow, Docker)
+- Include programming languages, frameworks, cloud platforms, databases, and methodologies
+- Pack relevant technical skills while maintaining natural readability
+
 **Instructions:**
-Create 10 impactful bullet points that:
+Create 15 impactful bullet points that:
 1. Highlight the most relevant skills and experience for THIS specific role
 2. Include quantifiable achievements (%, $, scale, impact)
-3. Mention key technologies/skills from the job description
-4. Show progression and leadership
-5. Demonstrate domain expertise
+3. Mention 2-3 key technologies/skills from the job description in EACH bullet
+4. Show progression and leadership with technical context
+5. Demonstrate domain expertise with specific tools/frameworks
 6. Are action-oriented and results-focused
 7. Are concise (1-2 lines each)
-8. Use strong verbs (Led, Architected, Scaled, Optimized, etc.)
-9. Show both technical depth and business impact
+8. Use strong verbs (Led, Architected, Engineered, Scaled, Optimized, Implemented, Developed)
+9. Show both technical depth (specific technologies) and business impact (metrics)
 10. Create a compelling narrative of the candidate's value
+11. Include cloud platforms (AWS/Azure/GCP) if mentioned in JD
+12. Include ML/AI frameworks (TensorFlow/PyTorch/scikit-learn) if mentioned in JD
+13. Include DevOps tools (Docker/Kubernetes/Jenkins/Terraform) if mentioned in JD
+14. Include data technologies (SQL/NoSQL/Snowflake/Spark) if mentioned in JD
+15. Prioritize technical skills that appear multiple times in the job description
 
 **Format:**
-Return ONLY the 10 bullet points, one per line, starting with "•"
+Return ONLY the 15 bullet points, one per line, starting with "•"
 Do NOT include a header or section title.
 Do NOT include any other text.
+
+**Example Format:**
+• Architected scalable microservices using Python, FastAPI, and PostgreSQL, reducing API latency by 60% and handling 10M+ requests/day
+• Led cloud migration to AWS (EC2, S3, Lambda, RDS) saving $500K annually while improving system reliability to 99.99% uptime
+• Developed ML pipelines using TensorFlow, Kubeflow, and Databricks for real-time predictions serving 5M+ users daily
 
 Example format:
 • Led cross-functional team of 12 engineers to deliver cloud migration, reducing infrastructure costs by 40% ($2M annually)
