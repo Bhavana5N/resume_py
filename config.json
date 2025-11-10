@@ -33,78 +33,7 @@
     "enabled": true,
     "sites": [
 
-      {
-        "url": "https://www.google.com/about/careers/applications/jobs/results/",
-        "company": "google",
-        "list_selector": "li[class*='lLd3Je']",
-        "title_selector": "h2, h3",
-        "location_selector": "span[class*='r0wTof']",
-        "link_selector": "a",
-        "source": "selenium:google",
-        "careers_url": "https://www.google.com/about/careers/",
-        "domain_filter": "google.com",
-        "absolute_base": "https://www.google.com",
-        "sleep_seconds": 2,
-        "wait_selector": "li[class*='lLd3Je']"
-      },
-      {
-        "url": "https://www.amazon.jobs/en/search",
-        "company": "amazon",
-        "list_selector": "div[class*='job-tile']",
-        "title_selector": "h3, a[class*='title']",
-        "location_selector": "span[class*='location']",
-        "link_selector": "a",
-        "source": "selenium:amazon",
-        "careers_url": "https://www.amazon.jobs/",
-        "domain_filter": "amazon.jobs",
-        "absolute_base": "https://www.amazon.jobs",
-        "sleep_seconds": 2,
-        "wait_selector": "div[class*='job-tile']"
-      },
-      {
-        "url": "https://careers.microsoft.com/us/en/search-results",
-        "company": "microsoft",
-        "list_selector": "article[data-ph-at-id='job-result'], div[class*='job-result'], li[class*='job-result']",
-        "title_selector": "h2, h3, a[data-ph-at-id='job-result-title'], span[data-ph-at-id='job-result-title'], [aria-label*='job']",
-        "location_selector": "span[class*='location'], [data-ph-at-id='job-result-location']",
-        "link_selector": "a[href*='/job/'], a[href*='/jobs/'], a[data-ph-at-id='job-result-title']",
-        "source": "selenium:microsoft",
-        "careers_url": "https://careers.microsoft.com/",
-        "domain_filter": "microsoft.com",
-        "absolute_base": "https://careers.microsoft.com",
-        "sleep_seconds": 3,
-        "wait_selector": "article[data-ph-at-id='job-result'], div[class*='job-result']"
-      },
-      {
-        "url": "https://www.uber.com/us/en/careers/list/",
-        "company": "uber",
-        "list_selector": "div[data-testid='job-card'], li[class*='job'], a[href*='/jobs/'], article[class*='job']",
-        "title_selector": "h3, h4, [data-testid='job-title'], [class*='job-title'], [class*='title'], a[href*='/jobs/']",
-        "location_selector": ".location, [class*='location'], [data-testid='location'], [class*='job-location']",
-        "link_selector": "a[href*='/jobs/'], a[href*='/careers/']",
-        "source": "selenium:uber",
-        "careers_url": "https://www.uber.com/us/en/careers/",
-        "domain_filter": "uber.com",
-        "absolute_base": "https://www.uber.com",
-        "open_roles_text": ["find open roles"],
-        "search_patterns": [],
-        "sleep_seconds": 3,
-        "wait_selector": "div[data-testid='job-card'], li[class*='job'], a[href*='/jobs/']"
-      },
-      {
-        "url": "https://jobs.apple.com/en-us/search",
-        "company": "apple",
-        "list_selector": "tr[id*='job-'], tbody tr",
-        "title_selector": "a[id*='job-title'], td a[href*='/details/'], a[href*='/details/']",
-        "location_selector": ".table--advanced-search__location, td[class*='location']",
-        "link_selector": "a[href*='/details/']",
-        "source": "selenium:apple",
-        "careers_url": "https://jobs.apple.com/",
-        "domain_filter": "apple.com",
-        "absolute_base": "https://jobs.apple.com",
-        "wait_selector": "tr[id*='job-'], tbody tr",
-        "sleep_seconds": 3
-      },
+
       {
         "url": "https://www.metacareers.com/jobs",
         "company": "meta",
@@ -119,20 +48,7 @@
         "sleep_seconds": 3,
         "wait_selector": "a[href*='/jobs/']"
       },
-      {
-        "url": "https://jobs.netflix.com/search",
-        "company": "netflix",
-        "list_selector": "div[class*='job-card'], article[class*='job'], li[class*='job']",
-        "title_selector": "h3, h2, a[class*='title'], [class*='job-title'], a[href*='/jobs/']",
-        "location_selector": "span[class*='location'], div[class*='location']",
-        "link_selector": "a[href*='/jobs/'], a[href*='/job/']",
-        "source": "selenium:netflix",
-        "careers_url": "https://jobs.netflix.com/",
-        "domain_filter": "netflix.com",
-        "absolute_base": "https://jobs.netflix.com",
-        "sleep_seconds": 3,
-        "wait_selector": "div[class*='job-card'], article[class*='job']"
-      },
+     
       {
         "url": "https://careers.oracle.com/jobs/#en/sites/jobsearch",
         "company": "oracle",
