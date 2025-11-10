@@ -532,7 +532,7 @@ def create_agent_from_config(config_path: str) -> JobApplicationAgent:
     agent_config = AgentConfig(
         resume_path=config_dict.get("resume", "input/resume.yml"),
         candidate_name=config_dict.get("cover_letter", {}).get("name", "Candidate"),
-        target_roles=config_dict.get("companies", ["software engineer"]),
+        target_roles=config_dict.get("target_roles", ["software engineer"]),
         target_companies=config_dict.get("companies", []),
         max_jobs_to_fetch=config_dict.get("fetch_limit", 500),
         max_jobs_to_apply=config_dict.get("top", 15),

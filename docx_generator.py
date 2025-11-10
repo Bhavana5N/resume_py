@@ -42,6 +42,12 @@ def _clean_markdown(text: str) -> str:
     text = re.sub(r'(?<!_)_(?!_)([^_]+)_(?!_)', r'\1', text)
     return text
 
+LINK_REGEX = re.compile(r'https?://[^\s,;]+', re.IGNORECASE)
+UNWANTED_PHRASES = [
+    "this resume is crafted to align bhavana's extensive technical",
+    "this resume is crafted to align bhavana's extensive technical background",
+]
+
 
 def _extract_contact_details(content: str, sections: dict) -> dict[str, str]:
     details: dict[str, str] = {}
@@ -59,9 +65,13 @@ def _extract_contact_details(content: str, sections: dict) -> dict[str, str]:
         stripped = _clean_markdown(line.strip())
         lower = stripped.lower()
         if "linkedin.com" in lower and "linkedin" not in details:
-            details["linkedin"] = stripped
+            match = LINK_REGEX.search(stripped)
+            details["linkedin"] = match.group(0) if match else stripped
+            continue
         if "github.com" in lower and "github" not in details:
-            details["github"] = stripped
+            match = LINK_REGEX.search(stripped)
+            details["github"] = match.group(0) if match else stripped
+            continue
         match_email = email_regex.search(stripped)
         if match_email and "email" not in details:
             details["email"] = match_email.group(0)
@@ -159,10 +169,6 @@ class WordDocumentGenerator:
                 github_para.paragraph_format.space_after = Pt(6)
 
             if mail_phone_parts or contact_details.get("linkedin") or contact_details.get("github"):
-                doc.add_paragraph()
-                for _ in range(4):
-                    line_para = doc.add_paragraph("______________________________________________")
-                    line_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
                 doc.add_paragraph()
             
             # Professional Summary (15 bullet points)

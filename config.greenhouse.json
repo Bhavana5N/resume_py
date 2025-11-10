@@ -17,14 +17,14 @@
     "apple",
     "amazon",
     "netflix",
+    "oracle",
     "adp",
     "ford",
     "bosch",
     "jpmorgan",
     "morgan stanley",
     "bank of america",
-    "gm",
-    "oracle"
+    "gm"
   ],
   "target_roles": [
     "software engineer",
@@ -189,15 +189,15 @@
       },
       {
         "company": "morganstanley",
-        "url": "https://www.morganstanley.com/careers/career-opportunities-search",
+        "url": "https://careers.morganstanley.com/us/en/search-results",
         "list_selector": "li[class*='job'], article[class*='job'], div[class*='job-result']",
         "title_selector": "a[class*='job-title'], h2, h3",
         "location_selector": "span[class*='job-location'], span[class*='location'], div[class*='location']",
         "link_selector": "a[href*='/job/']",
         "source": "selenium:morganstanley",
-        "careers_url": "https://www.morganstanley.com/careers",
+        "careers_url": "https://careers.morganstanley.com/",
         "domain_filter": "morganstanley.com",
-        "absolute_base": "https://www.morganstanley.com/careers",
+        "absolute_base": "https://careers.morganstanley.com",
         "sleep_seconds": 3,
         "wait_selector": "li[class*='job'], article[class*='job'], div[class*='job-result']"
       },
@@ -304,21 +304,8 @@
   },
   "company_sources": {
     "lever": {
-      "enabled": true,
-      "companies": [
-        {
-          "name": "Databricks",
-          "slug": "databricks"
-        },
-        {
-          "name": "Gusto",
-          "slug": "gusto"
-        },
-        {
-          "name": "Rippling",
-          "slug": "rippling"
-        }
-      ]
+      "enabled": false,
+      "companies": []
     },
     "greenhouse": {
       "enabled": true,
@@ -338,8 +325,13 @@
         {
           "name": "Stripe",
           "slug": "stripe"
+        },
+        {
+          "name": "Dropbox",
+          "slug": "dropbox"
         }
       ]
     }
   }
 }
+

@@ -56,6 +56,12 @@ def _clean_markdown(text: str) -> str:
     text = re.sub(r'(?<!_)_(?!_)([^_]+)_(?!_)', r'\1', text)
     return text
 
+LINK_REGEX = re.compile(r'https?://[^\s,;]+', re.IGNORECASE)
+UNWANTED_PHRASES = [
+    "this resume is crafted to align bhavana's extensive technical",
+    "this resume is crafted to align bhavana's extensive technical background",
+]
+
 
 def _extract_contact_details(content: str, sections: dict) -> dict[str, str]:
     """Extract email, phone, LinkedIn, and GitHub links from content/sections."""
@@ -74,9 +80,13 @@ def _extract_contact_details(content: str, sections: dict) -> dict[str, str]:
         stripped = _clean_markdown(line.strip())
         lower = stripped.lower()
         if "linkedin.com" in lower and "linkedin" not in details:
-            details["linkedin"] = stripped
+            match = LINK_REGEX.search(stripped)
+            details["linkedin"] = match.group(0) if match else stripped
+            continue
         if "github.com" in lower and "github" not in details:
-            details["github"] = stripped
+            match = LINK_REGEX.search(stripped)
+            details["github"] = match.group(0) if match else stripped
+            continue
         if "email" in lower:
             match = email_regex.search(stripped)
             if match:
@@ -257,11 +267,7 @@ r45        Generate a professional 3-page resume PDF
             
             # Add four horizontal lines in the middle area
             if mail_phone_parts or contact_details.get("linkedin") or contact_details.get("github"):
-                story.append(Spacer(1, 0.1*inch))
-                line_text = "________________________________________________________________________________"
-                for _ in range(4):
-                    story.append(Paragraph(f"<para align='center'>{line_text}</para>", self.styles['Normal']))
-                story.append(Spacer(1, 0.1*inch))
+                story.append(Spacer(1, 0.15*inch))
             
             # Professional Summary (15 bullet points)
             summary_added = False
@@ -657,10 +663,12 @@ r45        Generate a professional 3-page resume PDF
             r'this resume (is|has been).*optimized',
             r'this resume (is|has been).*tailored',
             r'this resume (is|has been).*designed',
+            r'this resume (is|has been).*crafted',
             r'tailored.*for.*position',
             r'optimized for.*position at',
             r'formatted to align with',
             r'designed to showcase',
+            r'this resume is crafted to align ',
         ]
         
         for line in lines:
@@ -680,6 +688,9 @@ r45        Generate a professional 3-page resume PDF
             
             # Skip lines matching optimization text patterns
             if any(re.search(pattern, line_lower) for pattern in skip_patterns):
+                continue
+
+            if any(phrase in line_lower for phrase in UNWANTED_PHRASES):
                 continue
             
             # Check if this is a section header (all caps or specific keywords)
