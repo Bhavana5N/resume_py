@@ -860,6 +860,7 @@ def main() -> None:
 
     selenium_sites = load_selenium_sites_from_opts(selenium_opts)
 
+    fetched: list[dict[str, Any]] = []
     company_sources_cfg = resolved_cfg.get("company_sources") or {}
     hosted_jobs = fetch_company_source_jobs(company_sources_cfg, int(resolved_cfg.get("fetch_limit", 200)))
     fetched += hosted_jobs
